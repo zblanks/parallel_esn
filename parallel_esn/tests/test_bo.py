@@ -6,7 +6,7 @@ def test_init():
     # Check that error is thrown when we don't pass a tuple for a
     # hyper-parameter
     with pytest.raises(AssertionError):
-        bo = BO(k=2)
+        BO(k=2)
 
 
 def test_update_gpr():
