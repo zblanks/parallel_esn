@@ -11,4 +11,5 @@ Parallel Echo State Network Documentation
 
    installation
    usage
+   network-training
    release-history

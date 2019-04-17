@@ -38,11 +38,13 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'matplotlib.sphinxext.plot_directive',
-    'numpydoc',
+    # 'numpydoc',
     'sphinx_copybutton',
+    'sphinxcontrib.bibtex'
 ]
 
 # Configuration options for plot_directive. See:
