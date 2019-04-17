@@ -13,9 +13,16 @@ install:
   # Install extra requirements for running tests and building docs.
   - pip install -r requirements-dev.txt
 
+env:
+  global:
+    - secure: "BMOXn+dklzKPyhN50eKCtQAFyc2t25a+8SNXVEgPvGDlNWyPYN/IfECkN9E34UqD9xeolVhmSHGaQRmbQXzdHGP5CbK+bwvTxb2HCCQGoT4UnSAiMKezwIXQNooWXedQxkgKnsniIrd5G4B8HfR0LMxgNwl6V5VIZT6/Ib/sHLAFlVASG4VAkOgRVu0ulddJWdKTIS6nlRjBmXnu92xUYOuJ9+AuuCM8DIxcrsSxcfL9oIoS5BtBdUIEIXds1OgcEZ0e+oXruTOg3sSqZSlwQ2Obj6XLUQX3WjHjcyU/u6n8ULaChh+TSgtKbA5C/ltoQHzUp/45o3C1xaavwZyw+GbV8Hb4xPza4mL+xFXLNHuT5tSmUUdnKSh9AcOGJ4zbw2IZBOnHzGZvsq2Fsgj08mekC4JwPYcRq3SxMdmDqZ7j7SIAY7nYFY+dqKK42iL3t7z0YaGvg1jrArUS4Bf8sdhX8/QP2Y8zfKfz3xLAPOMVZ7T4IgtQgDElJYSZLc0UfnuN5SqLDffHYuTEUScjFI8gXiw2BbMK1qPhe/pIaTM30plqBQ2EzkoSKsXrTIaV8mz5D0wycvxXEQQAPYJeI4bamkG1w8d8Xwzz480T/mxhP9QEsLO+culvAiQzf9UV3hVQEVZbGuq9lCjIoogiXbBSOAHmX9tMt6Y9e0TCS4k="
+
 script:
   - coverage run -m pytest  # Run the tests and check for test coverage.
   - coverage report -m  # Generate test coverage report.
   - codecov  # Upload the report to codecov.
   - flake8 .  # Enforce code style (but relax line length limit a bit).
+  - set -e
   - make -C docs html  # Build the documentation.
+  - pip install doctr
+  - doctr deploy --built-docs docs/build/html .  # Publish the documentation.
