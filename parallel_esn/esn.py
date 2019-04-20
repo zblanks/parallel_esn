@@ -77,8 +77,8 @@ class ESN:
         self.W = self._initialize_hidden_layer()
         self.W_in = self._initialize_input_layer()
 
-        self.YXt = np.zeros((output_dim,input_dim))
-        self.XXt = np.zeros((input_dim,input_dim))
+        self.YXt = np.zeros((output_dim,1+input_dim+hidden_dim))
+        self.XXt = np.zeros((1+input_dim+hidden_dim,1+input_dim+hidden_dim))
 
     def _initialize_hidden_layer(self):
         """
@@ -91,7 +91,7 @@ class ESN:
 
         """
         G = nx.watts_strogatz_graph(self.hidden_dim, self.k, self.p, self.rng)
-        A = nx.to_numpy_array(G)
+        A = nx.to_numpy_matrix(G)
 
         if self.weight_distn == 'uniform':
             weights = self.rng.uniform(low=-1, high=1, size=(self.hidden_dim,
@@ -154,40 +154,33 @@ class ESN:
         # Do first step
         X[1:Nu+1,0] = U[:,0]
         xti = np.tanh(self.W_in @ X[:Nu+1,0]) # can potentially add random init 
-        X[:,0] = self.alpha * xti             # as a hyper-parameter
+        X[Nu+1:,0] = self.alpha * xti             # as a hyper-parameter
 
         for n in range(1,T):
-            N[1:Nu+1,n] = U[:,n]
-            xti = np.tanh(self.W_in @ X[1:Nu+1,n] + self.W @ X[Nu:,n-1])
-            X[Nu:,n] = (1.-self.alpha)*X[Nu:,n-1] + self.alpha*xti
+            X[1:Nu+1,n] = U[:,n]
+            xti = np.tanh(self.W_in @ X[:Nu+1,n] + self.W @ X[Nu+1:,n-1])
+            X[Nu+1:,n] = (1.-self.alpha)*X[Nu+1:,n-1] + self.alpha*xti
         
         return X
 
-    def _compute_Wout(self, Y_true):
+    def _compute_Wout(self):
         """
-        Computes W_out from X_out (activations) and W
+        Computes W_out from X (activations) and W
         W_out = YX'(XX' + bI)^(-1)
-
-        Parameters
-        ----------
-        Y_true : np.ndarray, dimensions N_y x T
-            Target output array,  y(n) concatenated horizontally in time
 
         Returns
         -------
         W_out : np.ndarray
 
         """
-        shape = X_out.shape[0]
-        Id = np.identity(shape)
-        inner = np.linalg.inv(np.matmul(X_out, X_out.T) + self.beta*Id)
-        outer = np.matmul(Y_true, X_out.T)
+        Id = np.identity(self.XXt.shape[0])
+        inner = np.linalg.inv(self.XXt + self.beta*Id)
 
-        self.W_out = np.matmul(outer, inner)
+        self.W_out = np.matmul(self.YXt, inner)
 
-    def train(self, batchU, batchY_true):
+    def train(self, batchU, batchY_true, verbose=1):
         """
-        Trains on U's and corresponding Y_true's, batched in rows.
+        Trains on U's and corresponding Y_true's, batched in first index.
 
         Parameters
         ----------
@@ -198,8 +191,72 @@ class ESN:
 
         Returns
         -------
-        >>> Perhaps training loss?
+        loss : np.ndarray of length batchsize
+            Returns the loss computed on each sequence
         """
+        if batchU.shape[0] != batchY_true.shape[0]:
+            raise ValueError('batchU and batchY need to have the same first dimension')
+        nseq = batchU.shape[0]
+        loss = np.zeros(nseq)
+        for s in range(nseq):
+            X = self._compute_X(batchU[s,:,:])
+            self.XXt += X @ X.T
+            self.YXt += batchY_true[s,:,:] @ X.T
+            self._compute_Wout()
+            # Can optimize the following by having a score function that can use
+            # precomputed X instead of recomputing it from U
+            loss[s] = self.score(batchU[s,:,:],batchY_true[s,:,:])
+            if verbose == 1:
+                print("loss = {}".format(loss[s]))
+        return loss
+
+    def validate(self, batchU, batchY_true):
+        """
+        Get loss on validation set, given past sequences in batchU and observed 
+        outcomes batchY_true
+
+        Parameters
+        ----------
+        batchU : list of np.ndarray, dimensions Unknown x N_x x T_i
+            batch of input data arrays, columns u(n) concatenated horizontally
+        batchY_true : list of np.ndarray, dimensions Unknown x N_y x T_i
+            batch of true output data arrays
+
+        Returns
+        -------
+        loss : float
+            Returns the sum of the losses computed on each sequence
+        """
+        nseq = batchU.shape[0]
+        loss = 0.
+        for s in range(nseq):
+            loss += self.score(batchU[s,:,:],batchY_true[s,:,:])
+        return loss
+
+    def train_validate(self, trainU, trainY, valU, valY):
+        """
+        Train on provided training data, and immediately validate
+        and return validation loss.
+
+        Parameters
+        ----------
+        trainU : list of np.ndarray, dimensions Unknown x N_x x T_i
+            batch of training input data arrays, columns u(n) concatenated horizontally
+        trainY : list of np.ndarray, dimensions Unknown x N_y x T_i
+            batch of training true output data arrays
+        valU : list of np.ndarray, dimensions Unknown x N_x x T_i
+            batch of validation input data arrays, columns u(n) concatenated horizontally
+        valY : list of np.ndarray, dimensions Unknown x N_y x T_i
+            batch of validation true output data arrays
+
+        Returns
+        -------
+        loss : float
+            Returns the sum of the losses computed on each sequence in validation set
+        """
+        self.train(trainU, trainY)
+        return self.validate(valU,valY)
+
 
     def predict(self, U):
         """
@@ -218,13 +275,12 @@ class ESN:
         """
         W_out = self.W_out
         X = self._compute_X(U)
-        Yhat = np.matmul(W_out, X_out)
+        Yhat = np.matmul(W_out, X)
         return Yhat
 
     def score(self, U, Y_true):
         """
-        Computes W_out from X_out (activations) and W
-        W_out = YX'(XX' + bI)^(-1)
+        Computes loss
 
         Parameters
         ----------
@@ -236,10 +292,9 @@ class ESN:
         Returns
         -------
         error : float
-        >>> Check this section; will mean squared error handle matrices?
 
         """
         Yhat = self.predict(U)
-        return mean_squared_error(y_true, yhat)
+        return mean_squared_error(Y_true, Yhat)
 
 
