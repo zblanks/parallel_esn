@@ -77,8 +77,8 @@ class ESN:
         self.W = self._initialize_hidden_layer()
         self.W_in = self._initialize_input_layer()
 
-        self.YXt = np.zeros((output_dim,1+input_dim+hidden_dim))
-        self.XXt = np.zeros((1+input_dim+hidden_dim,1+input_dim+hidden_dim))
+        self.YXt = np.zeros((output_dim, 1+input_dim+hidden_dim))
+        self.XXt = np.zeros((1+input_dim+hidden_dim, 1+input_dim+hidden_dim))
 
     def _initialize_hidden_layer(self):
         """
@@ -91,7 +91,7 @@ class ESN:
 
         """
         G = nx.watts_strogatz_graph(self.hidden_dim, self.k, self.p, self.rng)
-        A = nx.to_numpy_matrix(G)
+        A = nx.to_numpy_array(G)
 
         if self.weight_distn == 'uniform':
             weights = self.rng.uniform(low=-1, high=1, size=(self.hidden_dim,
@@ -130,7 +130,7 @@ class ESN:
         else:
             return self.rng.randn(d0=self.input_dim, d1=(1 + self.input_dim))
 
-    def _compute_X(self,U):
+    def _compute_X(self, U):
         """
         Computes the X in Y = W_out X,
         where the column vectors [1;u(n);x(n)] are concatenated
@@ -149,18 +149,17 @@ class ESN:
         T = U.shape[1]
         Nu = self.input_dim
         Nx = self.hidden_dim
-        X = np.ones((1+ Nu + Nx,T))
+        X = np.ones((1 + Nu + Nx, T))
 
         # Do first step
-        X[1:Nu+1,0] = U[:,0]
-        xti = np.tanh(self.W_in @ X[:Nu+1,0]) # can potentially add random init 
-        X[Nu+1:,0] = self.alpha * xti             # as a hyper-parameter
+        X[1:Nu+1, 0] = U[:, 0]
+        xti = np.tanh(self.W_in @ X[:Nu+1, 0])  # can potentially add random init
+        X[Nu+1:, 0] = self.alpha * xti             # as a hyper-parameter
 
-        for n in range(1,T):
-            X[1:Nu+1,n] = U[:,n]
-            xti = np.tanh(self.W_in @ X[:Nu+1,n] + self.W @ X[Nu+1:,n-1])
-            X[Nu+1:,n] = (1.-self.alpha)*X[Nu+1:,n-1] + self.alpha*xti
-        
+        for n in range(1, T):
+            X[1:Nu+1, n] = U[:, n]
+            xti = np.tanh(self.W_in @ X[:Nu+1, n] + self.W @ X[Nu+1:, n-1])
+            X[Nu+1:, n] = (1.-self.alpha)*X[Nu+1:, n-1] + self.alpha*xti
         return X
 
     def _compute_Wout(self):
@@ -199,21 +198,20 @@ class ESN:
         nseq = batchU.shape[0]
         loss = np.zeros(nseq)
         for s in range(nseq):
-            X = self._compute_X(batchU[s,:,:])
+            X = self._compute_X(batchU[s, :, :])
             self.XXt += X @ X.T
-            self.YXt += batchY_true[s,:,:] @ X.T
+            self.YXt += batchY_true[s, :, :] @ X.T
             self._compute_Wout()
             # Can optimize the following by having a score function that can use
             # precomputed X instead of recomputing it from U
-            loss[s] = self.score(batchU[s,:,:],batchY_true[s,:,:])
+            loss[s] = self.score(batchU[s, :, :], batchY_true[s, :, :])
             if verbose == 1:
                 print("loss = {}".format(loss[s]))
         return loss
 
     def validate(self, batchU, batchY_true):
         """
-        Get loss on validation set, given past sequences in batchU and observed 
-        outcomes batchY_true
+        Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true
 
         Parameters
         ----------
@@ -230,7 +228,7 @@ class ESN:
         nseq = batchU.shape[0]
         loss = 0.
         for s in range(nseq):
-            loss += self.score(batchU[s,:,:],batchY_true[s,:,:])
+            loss += self.score(batchU[s, :, :], batchY_true[s, :, :])
         return loss
 
     def train_validate(self, trainU, trainY, valU, valY):
@@ -255,8 +253,7 @@ class ESN:
             Returns the sum of the losses computed on each sequence in validation set
         """
         self.train(trainU, trainY)
-        return self.validate(valU,valY)
-
+        return self.validate(valU, valY)
 
     def predict(self, U):
         """
@@ -271,7 +268,6 @@ class ESN:
         -------
         Yhat : np.ndarray
             Prediction of observations
-
         """
         W_out = self.W_out
         X = self._compute_X(U)
@@ -296,5 +292,3 @@ class ESN:
         """
         Yhat = self.predict(U)
         return mean_squared_error(Y_true, Yhat)
-
-
