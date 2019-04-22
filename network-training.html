@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post4+gff75af1 documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post9+g50adc51 documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post4+gff75af1
+                0.post9+g50adc51
               </div>
             
           
@@ -192,9 +192,9 @@ re-wiring probability for the graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Size of input dimension</p></li>
-<li><p><strong>hidden_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of hidden units in the W matrix</p></li>
-<li><p><strong>output_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimensionality of the output</p></li>
+<li><p><strong>input_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Size of input dimension, N_u</p></li>
+<li><p><strong>hidden_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of hidden units in the W matrix, N_x</p></li>
+<li><p><strong>output_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimensionality of the output, N_y</p></li>
 <li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – k-nearest neighbors each node is connected to in the small-world
 network for the hidden layer</p></li>
 <li><p><strong>spectral_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – Spectral radius of the reservoir</p></li>
@@ -206,6 +206,117 @@ network for the hidden layer</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>U</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts Yhat, output observations, given time series of inputs U</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>U</strong> (<em>np.ndarray</em>) – Input data array, columns u(n) concatenated horizontally.
+Dimensions - N_u x T</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Yhat</strong> – Prediction of observations.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.score">
+<code class="descname">score</code><span class="sig-paren">(</span><em>U</em>, <em>Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes loss</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>np.ndarray</em>) – Input data array, columns u(n) concatenated horizontally.
+Dimensions - N_u x T</p></li>
+<li><p><strong>Y_true</strong> (<em>np.ndarray</em>) – Target output array,  y(n) concatenated horizontally in time.
+Dimensions - N_y x T</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>error</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.train">
+<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trains on U’s and corresponding Y_true’s, batched in first index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchU</strong> (<em>array_like of np.ndarray</em>) – Batch of input data arrays, columns u(n) concatenated horizontally
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – batch of true output data arrays
+Dimensions - Batch_size x N_y x T_i</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loss</strong> – Returns the loss computed on each sequence, array of length batchsize</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.train_validate">
+<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train on provided training data, and immediately validate
+and return validation loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainU</strong> (<em>array_like of np.ndarray</em>) – Batch of training input data arrays, columns u(n) concatenated horizontally.
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>trainY</strong> (<em>array_like of np.ndarray</em>) – Batch of training true output data arrays.
+Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>valU</strong> (<em>array_like of np.ndarray</em>) – Batch of validation input data arrays, columns u(n) concatenated horizontally.
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
+Dimensions - Batch_size x N_y x T_i</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence in validation set.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.validate">
+<code class="descname">validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchU</strong> (<em>array_like of np.ndarray</em>) – Batch of input data arrays, columns u(n) concatenated horizontally
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – Batch of true output data arrays
+Dimensions - Batch_size x N_y x T_i</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <p id="bibtex-bibliography-network-training-0"><dl class="citation">
