@@ -138,13 +138,15 @@ class ESN:
 
         Parameters
         ----------
-        U : np.ndarray, dimensions N_u x T
-            input data array, columns u(n) concatenated horizontally
+        U : np.ndarray
+            Input data array, dimensions N_u x T
+            Columns u(n) concatenated horizontally
 
         Returns
         -------
-        X : np.ndarray, dim (1+ N_u + N_x) x T
+        X : np.ndarray
             X is [1;u(n);x(n)] concatenated horizontally (n is time)
+            Dimensions of (1+ N_u + N_x) x T
         """
         T = U.shape[1]
         Nu = self.input_dim
@@ -170,6 +172,7 @@ class ESN:
         Returns
         -------
         W_out : np.ndarray
+            Matrix giving Y predicted values from X output from reservoir.
 
         """
         Id = np.identity(self.XXt.shape[0])
@@ -183,15 +186,17 @@ class ESN:
 
         Parameters
         ----------
-        batchU : list of np.ndarray, dimensions Unknown x N_x x T_i
-            batch of input data arrays, columns u(n) concatenated horizontally
-        batchY_true : list of np.ndarray, dimensions Unknown x N_y x T_i
+        batchU : array_like of np.ndarray
+            Batch of input data arrays, columns u(n) concatenated horizontally
+            Dimensions - Batch_size x N_x x T_i
+        batchY_true : array_like of np.ndarray
             batch of true output data arrays
+            Dimensions - Batch_size x N_y x T_i
 
         Returns
         -------
-        loss : np.ndarray of length batchsize
-            Returns the loss computed on each sequence
+        loss : np.ndarray
+            Returns the loss computed on each sequence, array of length batchsize
         """
         if batchU.shape[0] != batchY_true.shape[0]:
             raise ValueError('batchU and batchY need to have the same first dimension')
@@ -215,10 +220,12 @@ class ESN:
 
         Parameters
         ----------
-        batchU : list of np.ndarray, dimensions Unknown x N_x x T_i
-            batch of input data arrays, columns u(n) concatenated horizontally
-        batchY_true : list of np.ndarray, dimensions Unknown x N_y x T_i
-            batch of true output data arrays
+        batchU : array_like of np.ndarray
+            Batch of input data arrays, columns u(n) concatenated horizontally
+            Dimensions - Batch_size x N_x x T_i
+        batchY_true : array_like of np.ndarray
+            Batch of true output data arrays
+            Dimensions - Batch_size x N_y x T_i
 
         Returns
         -------
@@ -238,19 +245,23 @@ class ESN:
 
         Parameters
         ----------
-        trainU : list of np.ndarray, dimensions Unknown x N_x x T_i
-            batch of training input data arrays, columns u(n) concatenated horizontally
-        trainY : list of np.ndarray, dimensions Unknown x N_y x T_i
-            batch of training true output data arrays
-        valU : list of np.ndarray, dimensions Unknown x N_x x T_i
-            batch of validation input data arrays, columns u(n) concatenated horizontally
-        valY : list of np.ndarray, dimensions Unknown x N_y x T_i
-            batch of validation true output data arrays
+        trainU : array_like of np.ndarray
+            Batch of training input data arrays, columns u(n) concatenated horizontally.
+            Dimensions - Batch_size x N_x x T_i
+        trainY : array_like of np.ndarray
+            Batch of training true output data arrays.
+            Dimensions - Batch_size x N_y x T_i
+        valU : array_like of np.ndarray
+            Batch of validation input data arrays, columns u(n) concatenated horizontally.
+            Dimensions - Batch_size x N_x x T_i
+        valY : array_like of np.ndarray
+            Batch of validation true output data arrays.
+            Dimensions - Batch_size x N_y x T_i
 
         Returns
         -------
         loss : float
-            Returns the sum of the losses computed on each sequence in validation set
+            Returns the sum of the losses computed on each sequence in validation set.
         """
         self.train(trainU, trainY)
         return self.validate(valU, valY)
@@ -261,13 +272,14 @@ class ESN:
 
         Parameters
         ----------
-        U : np.ndarray, dimensions N_u x T
-            input data array, columns u(n) concatenated horizontally
+        U : np.ndarray
+            Input data array, columns u(n) concatenated horizontally.
+            Dimensions - N_u x T
 
         Returns
         -------
         Yhat : np.ndarray
-            Prediction of observations
+            Prediction of observations.
         """
         W_out = self.W_out
         X = self._compute_X(U)
@@ -280,10 +292,12 @@ class ESN:
 
         Parameters
         ----------
-        U : np.ndarray, dimensions N_u x T
-            input data array, columns u(n) concatenated horizontally
-        Y_true : np.ndarray, dimensions N_y x T
-            Target output array,  y(n) concatenated horizontally in time
+        U : np.ndarray
+            Input data array, columns u(n) concatenated horizontally.
+            Dimensions - N_u x T
+        Y_true : np.ndarray
+            Target output array,  y(n) concatenated horizontally in time.
+            Dimensions - N_y x T
 
         Returns
         -------
