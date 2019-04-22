@@ -1,10 +1,11 @@
 import numpy as np
-from ..esn import ESN
 import matplotlib.pyplot as plt
+from ..esn import ESN
+from ..utils import chunk_data
 
 # Load data
 
-data = np.loadtxt('PJM_Load_hourly.csv', delimiter=', ', skiprows=1, usecols=[1])
+data = np.loadtxt('PJM_Load_hourly.csv', delimiter=',', skiprows=1, usecols=[1])
 
 tot_len = data.shape[0]
 val_len = tot_len//10
@@ -17,26 +18,9 @@ data /= np.std(data)
 train_dat = data[:train_len]
 val_dat = data[train_len:]
 
-
-def chunk_data(timeseries, windowsize, stride):
-    length = timeseries.shape[0]
-    num_chunks = (length-(2*windowsize - 1))//stride
-    batchU = np.zeros((num_chunks, 1, windowsize))
-    batchY = np.zeros((num_chunks, 1, windowsize))
-    for i in range(num_chunks):
-        start = stride*i
-        end = start + windowsize
-        batchU[i, 0, :] = timeseries[start:end]
-        start = stride*i + windowsize
-        end = start + windowsize
-        batchY[i, 0, :] = timeseries[start:end]
-    return batchU, batchY
-
-
 windowsize = 160
 trainU, trainY = chunk_data(train_dat, windowsize, 20)
 valU, valY = chunk_data(val_dat, windowsize, 20)
-
 
 # Create a new ESN
 esn = ESN(1, windowsize, 1, 3)

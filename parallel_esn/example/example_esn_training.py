@@ -1,10 +1,11 @@
 import numpy as np
 from numpy.random import normal
-from ..esn import ESN
 import matplotlib.pyplot as plt
+from ..esn import ESN
+from ..utils import chunk_data
 
 # Create a noisy sinusoid:
-
+np.random.seed(17) # Set seed for deterministic results
 sigma = 0.3
 t = np.linspace(0, 1000, 10001)
 size = len(t)
@@ -15,25 +16,8 @@ val_t = np.linspace(0, 300, 3001)
 val_size = len(val_t)
 val_data = np.sin(2*np.pi*t + np.sqrt(2)) + normal(0., sigma, size)
 
-
-def chunk_data(timeseries, windowsize):
-    length = timeseries.shape[0]
-    num_chunks = length//(2*windowsize)
-    batchU = np.zeros((num_chunks, 1, windowsize))
-    batchY = np.zeros((num_chunks, 1, windowsize))
-    for i in range(num_chunks):
-        start = 2*windowsize*i
-        end = start + windowsize
-        batchU[i, 0, :] = timeseries[start:end]
-        start = 2*windowsize*i + windowsize
-        end = start + windowsize
-        batchY[i, 0, :] = timeseries[start:end]
-    return batchU, batchY
-
-
-trainU, trainY = chunk_data(data, 30)
-valU, valY = chunk_data(val_data, 30)
-
+trainU, trainY = chunk_data(data, 30, 30)
+valU, valY = chunk_data(val_data, 30, 30)
 
 # Create a new ESN
 esn = ESN(1, 60, 1, 3)
