@@ -54,7 +54,7 @@ setup(
         'parallel_esn': [
             # When adding files here, remember to update MANIFEST.in as well,
             # or else they will not be included in the distribution on PyPI!
-            # 'path/to/data_file',
+            'data/*.csv',
             ]
         },
     install_requires=requirements,

@@ -5,7 +5,7 @@ from ..esn import ESN
 from ..utils import chunk_data
 
 # Create a noisy sinusoid:
-np.random.seed(17) # Set seed for deterministic results
+np.random.seed(17)  # Set seed for deterministic results
 sigma = 0.3
 t = np.linspace(0, 1000, 10001)
 size = len(t)
