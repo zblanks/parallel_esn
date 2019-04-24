@@ -192,6 +192,8 @@ class ESN:
         batchY_true : array_like of np.ndarray
             batch of true output data arrays
             Dimensions - Batch_size x N_y x T_i
+        verbose : int, optional
+            Whether to print status of training
 
         Returns
         -------
@@ -238,7 +240,7 @@ class ESN:
             loss += self.score(batchU[s, :, :], batchY_true[s, :, :])
         return loss
 
-    def train_validate(self, trainU, trainY, valU, valY):
+    def train_validate(self, trainU, trainY, valU, valY, verbose=1):
         """
         Train on provided training data, and immediately validate
         and return validation loss.
@@ -257,13 +259,15 @@ class ESN:
         valY : array_like of np.ndarray
             Batch of validation true output data arrays.
             Dimensions - Batch_size x N_y x T_i
+        verbose : int, optional
+            Whether to print status of training
 
         Returns
         -------
         loss : float
             Returns the sum of the losses computed on each sequence in validation set.
         """
-        self.train(trainU, trainY)
+        self.train(trainU, trainY, verbose=verbose)
         return self.validate(valU, valY)
 
     def predict(self, U):

@@ -44,8 +44,8 @@ class BO:
         self.upr_k = k[1]
         self.lwr_hidden_dim = hidden_dim[0]
         self.upr_hidden_dim = hidden_dim[1]
-        self.lwr_spectral_radius = hidden_dim[0]
-        self.upr_spectral_radius = hidden_dim[1]
+        self.lwr_spectral_radius = spectral_radius[0]
+        self.upr_spectral_radius = spectral_radius[1]
         self.lwr_p = p[0]
         self.upr_p = p[1]
         self.lwr_alpha = alpha[0]
@@ -179,4 +179,6 @@ class BO:
                             'beta']
         best_vals = H_space[best_choice].flatten()
         param_vals = dict(zip(hyper_parameters, best_vals))
+        param_vals['k'] = int(param_vals['k'])
+        param_vals['hidden_dim'] = int(param_vals['hidden_dim'])
         return param_vals

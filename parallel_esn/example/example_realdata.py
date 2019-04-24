@@ -1,11 +1,12 @@
+from pkg_resources import resource_filename
 import numpy as np
 import matplotlib.pyplot as plt
 from ..esn import ESN
 from ..utils import chunk_data
 
 # Load data
-
-data = np.loadtxt('PJM_Load_hourly.csv', delimiter=',', skiprows=1, usecols=[1])
+fname = resource_filename('parallel_esn', 'data/PJM_Load_hourly.csv')
+data = np.loadtxt(fname, delimiter=',', skiprows=1, usecols=[1])
 
 tot_len = data.shape[0]
 val_len = tot_len//10
