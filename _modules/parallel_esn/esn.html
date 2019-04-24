@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post11+gf843887 documentation</title>
+  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post13+g1656383 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.post11+gf843887
+                0.post13+g1656383
               </div>
             
           
@@ -348,6 +348,8 @@
 <span class="sd">        batchY_true : array_like of np.ndarray</span>
 <span class="sd">            batch of true output data arrays</span>
 <span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        verbose : int, optional</span>
+<span class="sd">            Whether to print status of training</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -394,7 +396,7 @@
             <span class="n">loss</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
         <span class="k">return</span> <span class="n">loss</span></div>
 
-<div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">):</span>
+<div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Train on provided training data, and immediately validate</span>
 <span class="sd">        and return validation loss.</span>
@@ -413,13 +415,15 @@
 <span class="sd">        valY : array_like of np.ndarray</span>
 <span class="sd">            Batch of validation true output data arrays.</span>
 <span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        verbose : int, optional</span>
+<span class="sd">            Whether to print status of training</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        loss : float</span>
 <span class="sd">            Returns the sum of the losses computed on each sequence in validation set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ESN.predict"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">):</span>

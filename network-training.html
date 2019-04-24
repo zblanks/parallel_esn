@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post11+gf843887 documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post13+g1656383 documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post11+gf843887
+                0.post13+g1656383
               </div>
             
           
@@ -257,6 +257,7 @@ Dimensions - N_y x T</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – batch of true output data arrays
 Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Whether to print status of training</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -270,7 +271,7 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train_validate">
-<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -284,6 +285,7 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
 Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Whether to print status of training</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
