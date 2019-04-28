@@ -232,7 +232,7 @@ class ESN:
         Returns
         -------
         loss : float
-            Returns the sum of the losses computed on each sequence
+            Returns the average of the NMSE losses computed on each sequence
         """
         nseq = batchU.shape[0]
         loss = 0.
@@ -331,10 +331,16 @@ class ESN:
         Returns
         -------
         error : float
+            Normalized mean square error (NMSE). Each feature's NMSE is
+            computed separately and averaged together at the end.
 
         """
         Yhat = self.predict(U)
-        return mean_squared_error(Y_true, Yhat)
+        num_features = Y_true.shape[0]
+        error = 0.
+        for j in range(num_features):
+            error += mean_squared_error(Y_true[j, :], Yhat[j, :])/np.var(Y_true)
+        return error/num_features
 
     def score_with_X(self, X, Y_true):
         """
@@ -361,4 +367,8 @@ class ESN:
 
         """
         Yhat = self.predict_with_X(X)
-        return mean_squared_error(Y_true, Yhat)
+        num_features = Y_true.shape[0]
+        error = 0.
+        for j in range(num_features):
+            error += mean_squared_error(Y_true[j, :], Yhat[j, :])/np.var(Y_true)
+        return error/num_features
