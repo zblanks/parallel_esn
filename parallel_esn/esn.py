@@ -331,7 +331,7 @@ class ESN:
         Returns
         -------
         error : float
-            Normalized mean square error (NMSE). Each feature's NMSE is
+            Normalized root mean square error (NRMSE). Each feature's NRMSE is
             computed separately and averaged together at the end.
 
         """
@@ -339,7 +339,8 @@ class ESN:
         num_features = Y_true.shape[0]
         error = 0.
         for j in range(num_features):
-            error += mean_squared_error(Y_true[j, :], Yhat[j, :])/np.var(Y_true)
+            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
+                             / np.var(Y_true))
         return error/num_features
 
     def score_with_X(self, X, Y_true):
@@ -364,11 +365,14 @@ class ESN:
         Returns
         -------
         error : float
+            Normalized mean square error (NRMSE). Each feature's NRMSE is
+            computed separately and averaged together at the end.
 
         """
         Yhat = self.predict_with_X(X)
         num_features = Y_true.shape[0]
         error = 0.
         for j in range(num_features):
-            error += mean_squared_error(Y_true[j, :], Yhat[j, :])/np.var(Y_true)
+            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
+                             / np.var(Y_true))
         return error/num_features
