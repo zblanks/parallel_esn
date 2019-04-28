@@ -309,6 +309,8 @@ class ESN:
         Yhat : np.ndarray
             Prediction of observations.
         """
+        if not isinstance(self.W_out, np.ndarray):  # Check if W_out exists yet
+            raise UnboundLocalError('Must train network before predictions can be made.')
         W_out = self.W_out
         Yhat = np.matmul(W_out, X)
         return Yhat
