@@ -73,15 +73,25 @@ def test_chunk_data_2d():
                            [7, -7]])
 
     # Test when data chunks evenly
-    chunkU1, chunkY1 = chunk_data(timeseries, 2, 4)
+    chunkU1, chunkY1 = chunk_data(timeseries, 2, 4,
+                                  predict_cols=[0, 1])
     ansU1 = np.array([[[0, 1], [0, -1]], [[4, 5], [-4, -5]]])
     ansY1 = np.array([[[2, 3], [-2, -3]], [[6, 7], [-6, -7]]])
     np.testing.assert_array_equal(chunkU1, ansU1)
     np.testing.assert_array_equal(chunkY1, ansY1)
 
     # Test when data does not chunk evenly
-    chunkU2, chunkY2 = chunk_data(timeseries, 2, 3)
+    chunkU2, chunkY2 = chunk_data(timeseries, 2, 3,
+                                  predict_cols=[0, 1])
     ansU2 = np.array([[[0, 1], [0, -1]], [[3, 4], [-3, -4]]])
     ansY2 = np.array([[[2, 3], [-2, -3]], [[5, 6], [-5, -6]]])
     np.testing.assert_array_equal(chunkU2, ansU2)
     np.testing.assert_array_equal(chunkY2, ansY2)
+
+    # Test chunking when predicting just column 0
+    chunkU3, chunkY3 = chunk_data(timeseries, 2, 4,
+                                  predict_cols=[0])
+    ansU3 = np.array([[[0, 1], [0, -1]], [[4, 5], [-4, -5]]])
+    ansY3 = np.array([[[2, 3]], [[6, 7]]])
+    np.testing.assert_array_equal(chunkU3, ansU3)
+    np.testing.assert_array_equal(chunkY3, ansY3)

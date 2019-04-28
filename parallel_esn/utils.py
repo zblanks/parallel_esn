@@ -49,7 +49,7 @@ def create_rng(random_state):
                         "np.random.RandomState")
 
 
-def chunk_data(timeseries, windowsize, stride):
+def chunk_data(timeseries, windowsize, stride, predict_cols=[0]):
     """
     Partitions time series data
 
@@ -66,6 +66,11 @@ def chunk_data(timeseries, windowsize, stride):
     stride : int
         Number of points to shift in time to generate a subsequent input
         window/output window of data.
+    predict_cols : array_like of int, optional
+        List of column indices of timeseries to return in batchY. Should
+        correspond to the features you want to predict. Implied order
+        of features in the list is maintained in returned batchY.
+
     Returns
     -------
     batchU : np.ndarray
@@ -73,7 +78,7 @@ def chunk_data(timeseries, windowsize, stride):
         Dimensions are (num_samples, num_features, windowsize)
     batchY : np.ndarray
         Partitioned targets.
-        Dimensions are (num_samples, num_features, windowsize)
+        Dimensions are (num_samples, len(predict_cols), windowsize)
 
     """
     ts_dim = len(timeseries.shape)
@@ -88,6 +93,17 @@ def chunk_data(timeseries, windowsize, stride):
         # promote to 2D array
         timeseries = timeseries.reshape(-1, 1)
 
+    # Number of prediction timeseries
+    pred_len = len(predict_cols)
+
+    # Ensure that columns to predict are in passed timeseries
+    for col in predict_cols:
+        if col > feature_len-1 or col < 0:
+            raise ValueError("Column index {} in predict_cols does not "
+                             "correspond to a column in provided "
+                             "timeseries, which has {} columns"
+                             .format(col, feature_len))
+    # How many time slices are in the timeseries
     length = timeseries.shape[0]
     # Get transposed view for later array assignment convenience
     timeseriesT = timeseries.T
@@ -99,12 +115,13 @@ def chunk_data(timeseries, windowsize, stride):
                           .format(length, 2*windowsize)))
     num_chunks = (length - 2*windowsize)//stride + 1
     batchU = np.zeros((num_chunks, feature_len, windowsize))
-    batchY = np.zeros((num_chunks, feature_len, windowsize))
+    batchY = np.zeros((num_chunks, pred_len, windowsize))
     for i in range(num_chunks):
         start = stride*i
         end = start + windowsize
         batchU[i, :, :] = timeseriesT[:, start:end]
         start = stride*i + windowsize
         end = start + windowsize
-        batchY[i, :, :] = timeseriesT[:, start:end]
+        for j, col in enumerate(predict_cols):
+            batchY[i, j, :] = timeseriesT[col, start:end]
     return batchU, batchY
