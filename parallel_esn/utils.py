@@ -56,30 +56,49 @@ def chunk_data(timeseries, windowsize, stride):
     Parameters
     ----------
     timeseries : np.ndarray
-        Time series data
+        Time series data, which can be 1D or 2D. If 2D, first index
+        corresponds to the time, and the second index corresponds to
+        a feature in the feature vector. I.e. feature vectors are
+        rows stacked vertically in time.
     windowsize : int
-        The number of data points to be used as input (equal to expected number
-        of outputs)
+        The number of data points in time to be used as input (equal to
+        expected number of outputs)
     stride : int
         Number of points to shift in time to generate a subsequent input
         window/output window of data.
     Returns
     -------
     batchU : np.ndarray
-        Partitioned samples
+        Partitioned samples.
+        Dimensions are (num_samples, num_features, windowsize)
     batchY : np.ndarray
-        Partitioned targets
+        Partitioned targets.
+        Dimensions are (num_samples, num_features, windowsize)
 
     """
+    ts_dim = len(timeseries.shape)
+    if ts_dim > 2 or ts_dim < 1:
+        raise ValueError(("Improper shape passed to chunk_data, "
+                          "timeseries must be one or two dimensional. (Received "
+                          "timeseries with dimension = {}".format(ts_dim)))
+    elif ts_dim == 2:  # feature vector
+        feature_len = timeseries.shape[1]
+    else:  # single feature
+        feature_len = 1
+        # promote to 2D array
+        timeseries = timeseries.reshape(-1, 1)
+
     length = timeseries.shape[0]
-    num_chunks = (length-(2*windowsize - 1))//stride
-    batchU = np.zeros((num_chunks, 1, windowsize))
-    batchY = np.zeros((num_chunks, 1, windowsize))
+    # Get transposed view for later array assignment convenience
+    timeseriesT = timeseries.T
+    num_chunks = (length - 2*windowsize)//stride + 1
+    batchU = np.zeros((num_chunks, feature_len, windowsize))
+    batchY = np.zeros((num_chunks, feature_len, windowsize))
     for i in range(num_chunks):
         start = stride*i
         end = start + windowsize
-        batchU[i, 0, :] = timeseries[start:end]
+        batchU[i, :, :] = timeseriesT[:, start:end]
         start = stride*i + windowsize
         end = start + windowsize
-        batchY[i, 0, :] = timeseries[start:end]
+        batchY[i, :, :] = timeseriesT[:, start:end]
     return batchU, batchY
