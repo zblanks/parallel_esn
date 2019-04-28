@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post13+g1656383 documentation</title>
+  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post21+g07942ac documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.post13+g1656383
+                0.post21+g07942ac
               </div>
             
           
@@ -301,7 +301,8 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        X : np.ndarray</span>
-<span class="sd">            X is [1;u(n);x(n)] concatenated horizontally (n is time)</span>
+<span class="sd">            X is [1;u(n);x(n)] concatenated horizontally (n is time) generated</span>
+<span class="sd">            from input data U.</span>
 <span class="sd">            Dimensions of (1+ N_u + N_x) x T</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">T</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -365,9 +366,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compute_Wout</span><span class="p">()</span>
-            <span class="c1"># Can optimize the following by having a score function that can use</span>
-            <span class="c1"># precomputed X instead of recomputing it from U</span>
-            <span class="n">loss</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+            <span class="c1"># Use precomputed X instead of recomputing it from U</span>
+            <span class="n">loss</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_with_X</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
             <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loss = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="n">s</span><span class="p">]))</span>
         <span class="k">return</span> <span class="n">loss</span></div>
@@ -388,13 +388,13 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        loss : float</span>
-<span class="sd">            Returns the sum of the losses computed on each sequence</span>
+<span class="sd">            Returns the average of the NMSE losses computed on each sequence</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nseq</span> <span class="o">=</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nseq</span><span class="p">):</span>
             <span class="n">loss</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
-        <span class="k">return</span> <span class="n">loss</span></div>
+        <span class="k">return</span> <span class="n">loss</span><span class="o">/</span><span class="n">nseq</span></div>
 
 <div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -441,8 +441,33 @@
 <span class="sd">        Yhat : np.ndarray</span>
 <span class="sd">            Prediction of observations.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>  <span class="c1"># Check if W_out exists yet</span>
+            <span class="k">raise</span> <span class="ne">UnboundLocalError</span><span class="p">(</span><span class="s1">&#39;Must train network before predictions can be made.&#39;</span><span class="p">)</span>
         <span class="n">W_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_X</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+        <span class="n">Yhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">W_out</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Yhat</span></div>
+
+<div class="viewcode-block" id="ESN.predict_with_X"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.predict_with_X">[docs]</a>    <span class="k">def</span> <span class="nf">predict_with_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predicts Yhat, output observations, given X already generated</span>
+<span class="sd">        from input data U.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : np.ndarray</span>
+<span class="sd">            X is [1;u(n);x(n)] concatenated horizontally (n is time), generated</span>
+<span class="sd">            from the input data U.</span>
+<span class="sd">            Dimensions of (1+ N_u + N_x) x T</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Yhat : np.ndarray</span>
+<span class="sd">            Prediction of observations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>  <span class="c1"># Check if W_out exists yet</span>
+            <span class="k">raise</span> <span class="ne">UnboundLocalError</span><span class="p">(</span><span class="s1">&#39;Must train network before predictions can be made.&#39;</span><span class="p">)</span>
+        <span class="n">W_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span>
         <span class="n">Yhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">W_out</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Yhat</span></div>
 
@@ -462,10 +487,51 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        error : float</span>
+<span class="sd">            Normalized root mean square error (NRMSE). Each feature&#39;s NRMSE is</span>
+<span class="sd">            computed separately and averaged together at the end.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">Yhat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">,</span> <span class="n">Yhat</span><span class="p">)</span></div></div>
+        <span class="n">num_features</span> <span class="o">=</span> <span class="n">Y_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">):</span>
+            <span class="n">error</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Yhat</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+                             <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">/</span><span class="n">num_features</span></div>
+
+<div class="viewcode-block" id="ESN.score_with_X"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.score_with_X">[docs]</a>    <span class="k">def</span> <span class="nf">score_with_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y_true</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes loss given input data X already processed with reservoir</span>
+<span class="sd">        activations. Functions identically to running:</span>
+
+<span class="sd">        self.score(self._compute_X(U), Y_true)</span>
+
+<span class="sd">        if provided X corresponds to U.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : np.ndarray</span>
+<span class="sd">            X is [1;u(n);x(n)] concatenated horizontally (n is time), generated</span>
+<span class="sd">            from the input data U.</span>
+<span class="sd">            Dimensions of (1+ N_u + N_x) x T</span>
+<span class="sd">        Y_true : np.ndarray</span>
+<span class="sd">            Target output array,  y(n) concatenated horizontally in time.</span>
+<span class="sd">            Dimensions - N_y x T</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        error : float</span>
+<span class="sd">            Normalized mean square error (NRMSE). Each feature&#39;s NRMSE is</span>
+<span class="sd">            computed separately and averaged together at the end.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Yhat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_with_X</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">num_features</span> <span class="o">=</span> <span class="n">Y_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">):</span>
+            <span class="n">error</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Yhat</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+                             <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">/</span><span class="n">num_features</span></div></div>
 </pre></div>
 
            </div>

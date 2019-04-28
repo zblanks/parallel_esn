@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post13+g1656383 documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post21+g07942ac documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post13+g1656383
+                0.post21+g07942ac
               </div>
             
           
@@ -225,6 +225,26 @@ Dimensions - N_u x T</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="parallel_esn.esn.ESN.predict_with_X">
+<code class="descname">predict_with_X</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict_with_X" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts Yhat, output observations, given X already generated
+from input data U.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray</em>) – X is [1;u(n);x(n)] concatenated horizontally (n is time), generated
+from the input data U.
+Dimensions of (1+ N_u + N_x) x T</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Yhat</strong> – Prediction of observations.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="parallel_esn.esn.ESN.score">
 <code class="descname">score</code><span class="sig-paren">(</span><em>U</em>, <em>Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes loss</p>
@@ -238,7 +258,35 @@ Dimensions - N_y x T</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>error</strong></p>
+<dd class="field-even"><p><strong>error</strong> – Normalized root mean square error (NRMSE). Each feature’s NRMSE is
+computed separately and averaged together at the end.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.score_with_X">
+<code class="descname">score_with_X</code><span class="sig-paren">(</span><em>X</em>, <em>Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score_with_X" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes loss given input data X already processed with reservoir
+activations. Functions identically to running:</p>
+<p>self.score(self._compute_X(U), Y_true)</p>
+<p>if provided X corresponds to U.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>np.ndarray</em>) – X is [1;u(n);x(n)] concatenated horizontally (n is time), generated
+from the input data U.
+Dimensions of (1+ N_u + N_x) x T</p></li>
+<li><p><strong>Y_true</strong> (<em>np.ndarray</em>) – Target output array,  y(n) concatenated horizontally in time.
+Dimensions - N_y x T</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>error</strong> – Normalized mean square error (NRMSE). Each feature’s NRMSE is
+computed separately and averaged together at the end.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
@@ -311,7 +359,7 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence</p>
+<dd class="field-even"><p><strong>loss</strong> – Returns the average of the NMSE losses computed on each sequence</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
