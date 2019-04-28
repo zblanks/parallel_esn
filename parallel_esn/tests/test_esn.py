@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from ..esn import ESN
-from ..utils import compute_spectral_radius
+from ..utils import compute_spectral_radius, chunk_data
 
 
 def test_initialize_hidden_layer():
@@ -26,39 +26,55 @@ def test_initialize_input_layer():
     assert W_in.shape == desired_shape
 
 
-def test_train_validate():
+@pytest.fixture(scope="module", autouse=True)
+def generate_data_network():
+    # Create data for the following tests. Only runs
+    # once in the testing for efficiency.
     # Run a simple test of training on sinusoidal data
-    t = np.linspace(0, 100, 1001)
+    t = np.linspace(0, 10, 101)
     data = np.sin(2*np.pi*t)
     # Create a validation the same way, with a phase shift
-    val_t = np.linspace(0, 30, 301)
+    val_t = np.linspace(0, 3, 31)
     val_data = np.sin(2*np.pi*val_t + np.sqrt(2))
+    windowsize = 10
+    trainU, trainY = chunk_data(data, windowsize, 4)
+    valU, valY = chunk_data(val_data, windowsize, 4)
 
-    def chunk_data(timeseries, windowsize, stride):
-        length = timeseries.shape[0]
-        num_chunks = (length-(2*windowsize - 1))//stride
-        batchU = np.zeros((num_chunks, 1, windowsize))
-        batchY = np.zeros((num_chunks, 1, windowsize))
-        for i in range(num_chunks):
-            start = stride*i
-            end = start + windowsize
-            batchU[i, 0, :] = timeseries[start:end]
-            start = stride*i + windowsize
-            end = start + windowsize
-            batchY[i, 0, :] = timeseries[start:end]
-        return batchU, batchY
-
-    windowsize = 100
-    trainU, trainY = chunk_data(data, windowsize, 40)
-    valU, valY = chunk_data(val_data, windowsize, 40)
-    # Create a new ESN
     esn = ESN(1, windowsize, 1, 3)
     losses = esn.train(trainU, trainY, verbose=0)
+
+    return t, val_t, trainU, trainY, valU, valY, esn, losses
+
+
+def test_train_validate(generate_data_network):
+    # Test training and validation
+
+    # Get data and trained network from generate_data_network
+    t, val_t, trainU, trainY, valU, valY, esn, losses = generate_data_network
+
     # Check that the right number of losses are returned
     assert len(losses) == trainU.shape[0]
     # Check that the algorithm makes progress
     assert losses[0] >= losses[-1]
 
     val_loss = esn.validate(valU, valY)
-    # Check that the validation loss is nonnegative
-    assert val_loss >= 0.
+    # Check that the validation loss is better than the first loss in training
+    assert 0 <= val_loss <= losses[0]
+
+
+def test_score_with_X(generate_data_network):
+    # Run a confirmation that scoring/predicting with X is
+    # equivalent to doing so with U.
+
+    # Get data and trained network from generate_data_network
+    t, val_t, trainU, trainY, valU, valY, esn, losses = generate_data_network
+
+    for s in range(trainU.shape[0]):
+        X = esn._compute_X(trainU[s, :, :])
+        prediction_from_U = esn.predict(trainU[s, :, :])
+        prediction_from_X = esn.predict_with_X(X)
+        np.testing.assert_allclose(prediction_from_U, prediction_from_X)
+
+        score_from_U = esn.score(trainU[s], trainY[s])
+        score_from_X = esn.score_with_X(X, trainY[s])
+        np.testing.assert_allclose(score_from_U, score_from_X)

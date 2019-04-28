@@ -145,7 +145,8 @@ class ESN:
         Returns
         -------
         X : np.ndarray
-            X is [1;u(n);x(n)] concatenated horizontally (n is time)
+            X is [1;u(n);x(n)] concatenated horizontally (n is time) generated
+            from input data U.
             Dimensions of (1+ N_u + N_x) x T
         """
         T = U.shape[1]
@@ -209,9 +210,8 @@ class ESN:
             self.XXt += X @ X.T
             self.YXt += batchY_true[s, :, :] @ X.T
             self._compute_Wout()
-            # Can optimize the following by having a score function that can use
-            # precomputed X instead of recomputing it from U
-            loss[s] = self.score(batchU[s, :, :], batchY_true[s, :, :])
+            # Use precomputed X instead of recomputing it from U
+            loss[s] = self.score_with_X(X, batchY_true[s, :, :])
             if verbose == 1:
                 print("loss = {}".format(loss[s]))
         return loss
@@ -232,13 +232,13 @@ class ESN:
         Returns
         -------
         loss : float
-            Returns the sum of the losses computed on each sequence
+            Returns the average of the NMSE losses computed on each sequence
         """
         nseq = batchU.shape[0]
         loss = 0.
         for s in range(nseq):
             loss += self.score(batchU[s, :, :], batchY_true[s, :, :])
-        return loss
+        return loss/nseq
 
     def train_validate(self, trainU, trainY, valU, valY, verbose=1):
         """
@@ -285,8 +285,33 @@ class ESN:
         Yhat : np.ndarray
             Prediction of observations.
         """
+        if not isinstance(self.W_out, np.ndarray):  # Check if W_out exists yet
+            raise UnboundLocalError('Must train network before predictions can be made.')
         W_out = self.W_out
         X = self._compute_X(U)
+        Yhat = np.matmul(W_out, X)
+        return Yhat
+
+    def predict_with_X(self, X):
+        """
+        Predicts Yhat, output observations, given X already generated
+        from input data U.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            X is [1;u(n);x(n)] concatenated horizontally (n is time), generated
+            from the input data U.
+            Dimensions of (1+ N_u + N_x) x T
+
+        Returns
+        -------
+        Yhat : np.ndarray
+            Prediction of observations.
+        """
+        if not isinstance(self.W_out, np.ndarray):  # Check if W_out exists yet
+            raise UnboundLocalError('Must train network before predictions can be made.')
+        W_out = self.W_out
         Yhat = np.matmul(W_out, X)
         return Yhat
 
@@ -306,7 +331,48 @@ class ESN:
         Returns
         -------
         error : float
+            Normalized root mean square error (NRMSE). Each feature's NRMSE is
+            computed separately and averaged together at the end.
 
         """
         Yhat = self.predict(U)
-        return mean_squared_error(Y_true, Yhat)
+        num_features = Y_true.shape[0]
+        error = 0.
+        for j in range(num_features):
+            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
+                             / np.var(Y_true))
+        return error/num_features
+
+    def score_with_X(self, X, Y_true):
+        """
+        Computes loss given input data X already processed with reservoir
+        activations. Functions identically to running:
+
+        self.score(self._compute_X(U), Y_true)
+
+        if provided X corresponds to U.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            X is [1;u(n);x(n)] concatenated horizontally (n is time), generated
+            from the input data U.
+            Dimensions of (1+ N_u + N_x) x T
+        Y_true : np.ndarray
+            Target output array,  y(n) concatenated horizontally in time.
+            Dimensions - N_y x T
+
+        Returns
+        -------
+        error : float
+            Normalized mean square error (NRMSE). Each feature's NRMSE is
+            computed separately and averaged together at the end.
+
+        """
+        Yhat = self.predict_with_X(X)
+        num_features = Y_true.shape[0]
+        error = 0.
+        for j in range(num_features):
+            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
+                             / np.var(Y_true))
+        return error/num_features
