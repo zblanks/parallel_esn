@@ -91,6 +91,12 @@ def chunk_data(timeseries, windowsize, stride):
     length = timeseries.shape[0]
     # Get transposed view for later array assignment convenience
     timeseriesT = timeseries.T
+    if length < 2*windowsize:
+        raise ValueError(("Window size too large for timeseries. "
+                          "Provided timeseries has {} times, "
+                          "and provided windowsize needs at least "
+                          "2*windowsize = {} time points."
+                          .format(length, 2*windowsize)))
     num_chunks = (length - 2*windowsize)//stride + 1
     batchU = np.zeros((num_chunks, feature_len, windowsize))
     batchY = np.zeros((num_chunks, feature_len, windowsize))
