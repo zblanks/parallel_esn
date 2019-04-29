@@ -49,7 +49,7 @@ def create_rng(random_state):
                         "np.random.RandomState")
 
 
-def chunk_data(timeseries, windowsize, stride, predict_cols=[0]):
+def chunk_data(timeseries, windowsize, stride, predict_cols=[]):
     """
     Partitions time series data
 
@@ -95,6 +95,9 @@ def chunk_data(timeseries, windowsize, stride, predict_cols=[0]):
 
     # Number of prediction timeseries
     pred_len = len(predict_cols)
+    if pred_len == 0:  # Then predict all columns
+        predict_cols = range(feature_len)
+        pred_len = len(predict_cols)
 
     # Ensure that columns to predict are in passed timeseries
     for col in predict_cols:
@@ -125,3 +128,194 @@ def chunk_data(timeseries, windowsize, stride, predict_cols=[0]):
         for j, col in enumerate(predict_cols):
             batchY[i, j, :] = timeseriesT[col, start:end]
     return batchU, batchY
+
+
+def standardize_traindata(timeseries):
+    """
+    Standardizes train data by column. Each column is assumed to correspond
+    to a feature, and the returned features are shifted and rescaled by
+
+    y' = (y - mu)/sigma
+
+    where y is a feature, mu is the mean of the feature (over time) and sigma
+    is the standard deviation of the feature (over time). An array containing
+    mu and an array containing sigma for each feature is returned for
+    use in transforming validation and test data. These arrays can be
+    passed alongside validation/test data to the scale_data function
+    which will then scale the data in the same way that the training
+    data was scaled.
+
+    In principle, the time series passed should only contain training
+    data to ensure that no information about the validation and test
+    data is used in training the network. Validation and test data
+    should then be scaled with mu_arr and sigma_arr using the function
+    scale_data.
+
+    Parameters
+    ----------
+    timeseries : np.ndarray
+        Time series data, which can be 1D or 2D. If 2D, first index
+        corresponds to the time, and the second index corresponds to
+        a feature in the feature vector. I.e. feature vectors are
+        rows stacked vertically in time. Intended to be training data.
+
+    Returns
+    -------
+    std_timeseries : np.ndarray
+        Time series data, with dimensions matching input time series.
+        Every feature is standardized based on the mean and standard
+        deviation calculated from its time series.
+    mu_arr : np.ndarray
+        Means of each feature, in the same order as the order of the
+        columns in the provided time series
+    sigma_arr : np.ndarray
+        Standard deviations of each feature, in the same order as the
+        order of the columns in the provided time series.
+
+    """
+    if len(timeseries.shape) == 1:
+        mu_arr = np.zeros(1)
+        sigma_arr = np.zeros(1)
+        mu = np.mean(timeseries)
+        sigma = np.std(timeseries)
+        if sigma == 0.:
+            sigma = 1.
+        std_timeseries = (timeseries - mu) / sigma
+        mu_arr[0] = mu
+        sigma_arr[0] = sigma
+    elif len(timeseries.shape) == 2:
+        mu_arr = np.zeros(timeseries.shape[1])
+        sigma_arr = np.zeros(timeseries.shape[1])
+        std_timeseries = np.zeros_like(timeseries)
+        for j in range(timeseries.shape[1]):
+            mu = np.mean(timeseries[:, j])
+            sigma = np.std(timeseries[:, j])
+            if sigma == 0.:
+                sigma = 1.
+            std_timeseries[:, j] = (timeseries[:, j] - mu) / sigma
+            mu_arr[j] = mu
+            sigma_arr[j] = sigma
+    else:
+        raise ValueError("Timeseries does not have appropriate shape; must be "
+                         "1D or 2D.")
+    return std_timeseries, mu_arr, sigma_arr
+
+
+def scale_data(timeseries, mu_arr, sigma_arr):
+    """
+    Scales time series data by the standardization set by
+    training data. The scaling is performed by the equation
+
+    y' = (y - mu)/sigma
+
+    where y is a feature, mu is the mean of the feature (over time) in the
+    training data and sigma is the standard deviation of the feature (over time)
+    in the training data. An array containing mu and sigma for each feature
+    is returned for use in transforming validation and test data.
+
+    Intended to be used only if training data was standardized with the
+    function standardize_traindata.
+
+    Parameters
+    ----------
+    timeseries : np.ndarray
+        Time series data, which can be 1D or 2D. If 2D, first index
+        corresponds to the time, and the second index corresponds to
+        a feature in the feature vector. I.e. feature vectors are
+        rows stacked vertically in time.
+    mu_arr : np.ndarray
+        Means of each feature computed from training data, in the
+        same order as the order of the columns in the provided time series
+    sigma_arr : np.ndarray
+        Standard deviations of each feature from training data, in
+        the same order as the order of the columns in the provided time
+        series.
+
+    Returns
+    -------
+    std_timeseries : np.ndarray
+        Time series data, with dimensions matching input time series.
+        Every feature is standardized based on the mean and standard
+        deviation calculated from its corresponding training data.
+
+    """
+    if len(timeseries.shape) == 1:
+        std_timeseries = (timeseries - mu_arr[0]) / sigma_arr[0]
+    elif len(timeseries.shape) == 2:
+        std_timeseries = np.zeros_like(timeseries)
+        for j in range(timeseries.shape[1]):
+            std_timeseries[:, j] = (timeseries[:, j] - mu_arr[j]) / sigma_arr[j]
+    else:
+        raise ValueError("Timeseries does not have appropriate shape; must be "
+                         "1D or 2D.")
+    return std_timeseries
+
+
+def unscale_data(scaled_pred, mu_arr, sigma_arr, predict_cols=[]):
+    """
+    Scales time series data by the standardization set by
+    training data. The scaling is performed by the equation
+
+    y' = (y - mu)/sigma
+
+    where y is a feature, mu is the mean of the feature (over time) in the
+    training data and sigma is the standard deviation of the feature (over time)
+    in the training data. An array containing mu and sigma for each feature
+    is returned for use in transforming validation and test data.
+
+    Intended to be used if training data was standardized with function
+    standardize_traindata, and if validation/test data was scaled by the
+    function scale_data.
+
+    Parameters
+    ----------
+    scaled_pred : np.ndarray
+        Scaled prediction data arising from running the echo state network
+        on standardized input data.
+    mu_arr : np.ndarray
+        Means of each feature computed from training data, in the
+        same order as the order of the columns in the provided time series
+    sigma_arr : np.ndarray
+        Standard deviations of each feature from training data, in
+        the same order as the order of the columns in the provided time
+        series.
+    predict_cols : array-like, optional
+        A list of indices corresponding to predicted features in scaled_pred,
+        with the value they would have if they indexed all the features in
+        the *input* data. If chunk_data was called with a specified list
+        of indices in optional argument predict_cols, the same list should
+        be passed to unscale_data here.
+
+    Returns
+    -------
+    pred : np.ndarray
+        Prediction data transformed back to the scale and units of the original
+        timeseries, prior to standardization.
+
+    """
+    if len(mu_arr) != len(sigma_arr):
+        raise ValueError("mu_arr and sigma_arr do not have the same number "
+                         "of elements")
+    if len(scaled_pred.shape) == 1:
+        pred = (scaled_pred * sigma_arr[0]) + mu_arr[0]
+    elif len(scaled_pred.shape) == 2:
+        pred_len = len(predict_cols)
+        if pred_len == 0:  # Then all features were predicted.
+            predict_cols = range(scaled_pred.shape[1])
+            pred_len = len(predict_cols)
+        else:
+            # Ensure that column indices corresponding to predicted features
+            # are in mu_arr and sigma_arr
+            for col in predict_cols:
+                if col > len(mu_arr)-1 or col < 0:
+                    raise ValueError("Column index {} in predict_cols does not "
+                                     "correspond to a column in provided "
+                                     "mu_arr and sigma_arr, which have {} columns"
+                                     .format(col, len(mu_arr)))
+        pred = np.zeros_like(scaled_pred)
+        for j, col in enumerate(predict_cols):
+            pred[:, j] = (scaled_pred[:, j] * sigma_arr[col]) + mu_arr[col]
+    else:
+        raise ValueError("scaled_pred does not have appropriate shape; must be "
+                         "1D or 2D.")
+    return pred

@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 from sklearn.metrics import mean_squared_error
 from .utils import create_rng, compute_spectral_radius
+from .progress import progress
 
 
 class ESN:
@@ -181,7 +182,7 @@ class ESN:
 
         self.W_out = np.matmul(self.YXt, inner)
 
-    def train(self, batchU, batchY_true, verbose=1):
+    def train(self, batchU, batchY_true, verbose=1, compute_loss_freq=-1):
         """
         Trains on U's and corresponding Y_true's, batched in first index.
 
@@ -193,30 +194,42 @@ class ESN:
         batchY_true : array_like of np.ndarray
             batch of true output data arrays
             Dimensions - Batch_size x N_y x T_i
-        verbose : int, optional
+        verbose : int, optional, default=1
             Whether to print status of training
+        compute_loss_freq : int, default=-1
+            How often to compute training loss. Only for information, not necessary
+            for training. Negative value disables computing training loss.
 
         Returns
         -------
         loss : np.ndarray
-            Returns the loss computed on each sequence, array of length batchsize
+            Returns the loss computed on each sequence where loss was computed, array
+            of length ((Batch_size-1) // compute_loss_freq) + 1. None returned if
+            compute_loss_freq is less than equal to 0.
         """
         if batchU.shape[0] != batchY_true.shape[0]:
             raise ValueError('batchU and batchY need to have the same first dimension')
         nseq = batchU.shape[0]
-        loss = np.zeros(nseq)
+        if compute_loss_freq > 0:
+            loss = np.zeros((nseq-1) // compute_loss_freq + 1)
+        else:
+            loss = None
         for s in range(nseq):
             X = self._compute_X(batchU[s, :, :])
             self.XXt += X @ X.T
             self.YXt += batchY_true[s, :, :] @ X.T
             self._compute_Wout()
-            # Use precomputed X instead of recomputing it from U
-            loss[s] = self.score_with_X(X, batchY_true[s, :, :])
+            status = 'Training: '
+            if compute_loss_freq > 0:
+                if s % compute_loss_freq == 0:
+                    # Use precomputed X instead of recomputing it from U
+                    loss[s // compute_loss_freq] = self.score_with_X(X, batchY_true[s, :, :])
+                    status += 'loss = {0:.4f}'.format(loss[s // compute_loss_freq])
             if verbose == 1:
-                print("loss = {}".format(loss[s]))
+                progress(s, nseq, status=status)
         return loss
 
-    def validate(self, batchU, batchY_true):
+    def validate(self, batchU, batchY_true, verbose=1):
         """
         Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true
 
@@ -237,10 +250,13 @@ class ESN:
         nseq = batchU.shape[0]
         loss = 0.
         for s in range(nseq):
-            loss += self.score(batchU[s, :, :], batchY_true[s, :, :])
+            curr_loss = self.score(batchU[s, :, :], batchY_true[s, :, :])
+            loss += curr_loss
+            if verbose == 1:
+                progress(s, nseq, status='Validation: loss = {0:.4f}'.format(curr_loss))
         return loss/nseq
 
-    def train_validate(self, trainU, trainY, valU, valY, verbose=1):
+    def train_validate(self, trainU, trainY, valU, valY, verbose=1, compute_loss_freq=-1):
         """
         Train on provided training data, and immediately validate
         and return validation loss.
@@ -259,16 +275,19 @@ class ESN:
         valY : array_like of np.ndarray
             Batch of validation true output data arrays.
             Dimensions - Batch_size x N_y x T_i
-        verbose : int, optional
+        verbose : int, optional, default=1
             Whether to print status of training
+        compute_loss_freq : int, optional, default=-1
+            How often to compute training loss. Only for information, not necessary
+            for training. Negative value disables computing training loss.
 
         Returns
         -------
         loss : float
             Returns the sum of the losses computed on each sequence in validation set.
         """
-        self.train(trainU, trainY, verbose=verbose)
-        return self.validate(valU, valY)
+        self.train(trainU, trainY, verbose=verbose, compute_loss_freq=compute_loss_freq)
+        return self.validate(valU, valY, verbose=verbose)
 
     def predict(self, U):
         """
@@ -283,11 +302,17 @@ class ESN:
         Returns
         -------
         Yhat : np.ndarray
-            Prediction of observations.
+            Prediction of observations. Returns feature vectors as columns stacked horizontally
+            in time. Take the transpose of this output to
+            obtain feature vectors as rows stacked vertically in time.
         """
         if not isinstance(self.W_out, np.ndarray):  # Check if W_out exists yet
             raise UnboundLocalError('Must train network before predictions can be made.')
         W_out = self.W_out
+        if U.shape[0] != self.input_dim:
+            raise ValueError("Dimension error: provided U input data array does not have "
+                             "the same number of features as the input data it was trained "
+                             "on.")
         X = self._compute_X(U)
         Yhat = np.matmul(W_out, X)
         return Yhat
@@ -339,8 +364,11 @@ class ESN:
         num_features = Y_true.shape[0]
         error = 0.
         for j in range(num_features):
+            var = np.var(Y_true[j, :])
+            if var == 0.:
+                var = 1.
             error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
-                             / np.var(Y_true))
+                             / var)
         return error/num_features
 
     def score_with_X(self, X, Y_true):
@@ -373,6 +401,9 @@ class ESN:
         num_features = Y_true.shape[0]
         error = 0.
         for j in range(num_features):
+            var = np.var(Y_true[j, :])
+            if var == 0.:
+                var = 1.
             error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
-                             / np.var(Y_true))
+                             / var)
         return error/num_features

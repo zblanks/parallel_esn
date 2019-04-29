@@ -41,7 +41,7 @@ def generate_data_network():
     valU, valY = chunk_data(val_data, windowsize, 4)
 
     esn = ESN(1, windowsize, 1, 3)
-    losses = esn.train(trainU, trainY, verbose=0)
+    losses = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1)
 
     return t, val_t, trainU, trainY, valU, valY, esn, losses
 
