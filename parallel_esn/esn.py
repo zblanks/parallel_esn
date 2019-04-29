@@ -219,12 +219,12 @@ class ESN:
             self.XXt += X @ X.T
             self.YXt += batchY_true[s, :, :] @ X.T
             self._compute_Wout()
-            status = 'Training: '
+            status = 'Training:'
             if compute_loss_freq > 0:
                 if s % compute_loss_freq == 0:
                     # Use precomputed X instead of recomputing it from U
                     loss[s // compute_loss_freq] = self.score_with_X(X, batchY_true[s, :, :])
-                    status += 'loss = {0:.4f}'.format(loss[s // compute_loss_freq])
+                    status += ' loss = {0:.4f}'.format(loss[s // compute_loss_freq])
             if verbose == 1:
                 progress(s, nseq, status=status)
         return loss
