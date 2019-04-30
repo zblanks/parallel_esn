@@ -41,7 +41,7 @@ def generate_data_network():
     valU, valY = chunk_data(val_data, windowsize, 4)
 
     esn = ESN(1, windowsize, 1, 3)
-    losses = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1)
+    losses = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1, warmup=0)
 
     return t, val_t, trainU, trainY, valU, valY, esn, losses
 
@@ -70,11 +70,15 @@ def test_score_with_X(generate_data_network):
     t, val_t, trainU, trainY, valU, valY, esn, losses = generate_data_network
 
     for s in range(trainU.shape[0]):
+        esn.clear_state()
         X = esn._compute_X(trainU[s, :, :])
+        esn.clear_state()
         prediction_from_U = esn.predict(trainU[s, :, :])
         prediction_from_X = esn.predict_with_X(X)
         np.testing.assert_allclose(prediction_from_U, prediction_from_X)
 
+        esn.clear_state()
         score_from_U = esn.score(trainU[s], trainY[s])
+        esn.clear_state()
         score_from_X = esn.score_with_X(X, trainY[s])
         np.testing.assert_allclose(score_from_U, score_from_X)

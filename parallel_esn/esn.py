@@ -3,6 +3,7 @@ import networkx as nx
 from sklearn.metrics import mean_squared_error
 from .utils import create_rng, compute_spectral_radius
 from .progress import progress
+import warnings
 
 
 class ESN:
@@ -78,6 +79,8 @@ class ESN:
         self.W = self._initialize_hidden_layer()
         self.W_in = self._initialize_input_layer()
 
+        self.X0 = np.zeros((1+input_dim+hidden_dim))
+
         self.YXt = np.zeros((output_dim, 1+input_dim+hidden_dim))
         self.XXt = np.zeros((1+input_dim+hidden_dim, 1+input_dim+hidden_dim))
 
@@ -137,6 +140,10 @@ class ESN:
         where the column vectors [1;u(n);x(n)] are concatenated
         horizontally over the entire time n = 1,...,T
 
+        X calculation is started from the saved reservoir state X0,
+        which is essentially the -1th column of X, i.e. the time right
+        before t = 0.
+
         Parameters
         ----------
         U : np.ndarray
@@ -155,15 +162,20 @@ class ESN:
         Nx = self.hidden_dim
         X = np.ones((1 + Nu + Nx, T))
 
-        # Do first step
+        # Do first step. It computes the first column of X based off of
+        # the existing reservoir state X0, which is just zero if the reservoir
+        # is not warmed up, or the state from the last training/prediction if
+        # it is.
         X[1:Nu+1, 0] = U[:, 0]
-        xti = np.tanh(self.W_in @ X[:Nu+1, 0])  # can potentially add random init
-        X[Nu+1:, 0] = self.alpha * xti             # as a hyper-parameter
+        xti = np.tanh(self.W_in @ X[:Nu+1, 0] + self.W @ self.X0[Nu+1:])
+        X[Nu+1:, 0] = (1.-self.alpha)*self.X0[Nu+1:] + self.alpha * xti
 
         for n in range(1, T):
             X[1:Nu+1, n] = U[:, n]
             xti = np.tanh(self.W_in @ X[:Nu+1, n] + self.W @ X[Nu+1:, n-1])
             X[Nu+1:, n] = (1.-self.alpha)*X[Nu+1:, n-1] + self.alpha*xti
+        # Save final reservoir state
+        self.X0 = X[:,-1]
         return X
 
     def _compute_Wout(self):
@@ -182,7 +194,26 @@ class ESN:
 
         self.W_out = np.matmul(self.YXt, inner)
 
-    def train(self, batchU, batchY_true, verbose=1, compute_loss_freq=-1):
+
+    def clear_state(self):
+        """
+        Clears X0, the reservoir's memory of previous inputs and neural state
+        """
+        self.X0 = np.zeros((1+self.input_dim+self.hidden_dim))
+
+
+    def reset(self):
+        """
+        Reset output layer training and clear state
+        """
+        self.W_out = None
+        self.YXt = np.zeros((self.output_dim, 1+self.input_dim+self.hidden_dim))
+        self.XXt = np.zeros((1+self.input_dim+self.hidden_dim, 1+self.input_dim+self.hidden_dim))
+        self.clear_state()
+
+
+    def train(self, batchU, batchY_true, clear_state=False, warmup=10, verbose=1,
+              compute_loss_freq=-1):
         """
         Trains on U's and corresponding Y_true's, batched in first index.
 
@@ -194,6 +225,17 @@ class ESN:
         batchY_true : array_like of np.ndarray
             batch of true output data arrays
             Dimensions - Batch_size x N_y x T_i
+        clear_state : boolean, optional, default=False
+            Whether to clear the reservoir memory in between batches. If False, the training
+            on the batches is equivalent to if the batches were all concatenated into a single
+            time series.
+        warmup : int, optional, default=10
+            The number of states to discard at the beginning of training, before initial
+            transients in the reservoir have died out. The amount to discard depends on
+            the memory of the network and typically ranges from 10s to 100s. If batches are
+            to be treated as independent, with clear_state=True, warmups can typically be shorter
+            since the zeroed reservoir initialization would be the normal operating mode of
+            the ESN.
         verbose : int, optional, default=1
             Whether to print status of training
         compute_loss_freq : int, default=-1
@@ -207,6 +249,7 @@ class ESN:
             of length ((Batch_size-1) // compute_loss_freq) + 1. None returned if
             compute_loss_freq is less than equal to 0.
         """
+
         if batchU.shape[0] != batchY_true.shape[0]:
             raise ValueError('batchU and batchY need to have the same first dimension')
         nseq = batchU.shape[0]
@@ -215,9 +258,26 @@ class ESN:
         else:
             loss = None
         for s in range(nseq):
+            if clear_state:
+                self.clear_state()
             X = self._compute_X(batchU[s, :, :])
-            self.XXt += X @ X.T
-            self.YXt += batchY_true[s, :, :] @ X.T
+            if warmup > 0:  # Need to discard more states
+                if warmup >= X.shape[1]:
+                    if clear_state:
+                        warnings.warn("Warning: specified to discard more warmup states than "
+                                      "there are in the batch of input data. Network is not "
+                                      "being trained.")
+                    elif s == nseq - 1:
+                        warnings.warn("Warning: specified to discard more warmup states than "
+                                      "there are input data. Network was not trained.")
+                    warmup -= X.shape[1]  # ignore all X in this batch, decrease warmup count
+                else:
+                    self.XXt += X[:, warmup:] @ X[:, warmup:].T
+                    self.YXt += batchY_true[s, :, warmup:] @ X[:, warmup:].T
+                    warmup = 0  # Done with warmup
+            else:  # Done with warmup
+                self.XXt += X @ X.T
+                self.YXt += batchY_true[s, :, :] @ X.T
             self._compute_Wout()
             status = 'Training:'
             if compute_loss_freq > 0:
@@ -320,7 +380,8 @@ class ESN:
     def predict_with_X(self, X):
         """
         Predicts Yhat, output observations, given X already generated
-        from input data U.
+        from input data U. Useful if X has already been computed and a prediction
+        is desired without affecting the current state of the reservoir.
 
         Parameters
         ----------
@@ -338,6 +399,54 @@ class ESN:
             raise UnboundLocalError('Must train network before predictions can be made.')
         W_out = self.W_out
         Yhat = np.matmul(W_out, X)
+        return Yhat
+
+    def recursive_predict(self, U, iterations, cold_start=False):
+        """
+        Predicts Yhat, output observations following the given time series of inputs U
+        This method assumes that the network has been trained to produce one-step-forecasting,
+        where the output y(t) corresponds to u(t+1), i.e. what the next input would have been.
+        Currently this method only supports predicting all features provided as input; the
+        dimensions of vector y(t) must match the dimensions of u(t).
+
+        For the first step, observed values u(t) for t=0..T-1 are used to produce the first
+        predicted value y(t) = \hat{u}(t+1), which is then fed back to the network as an
+        input in order to produce y(t+1). This recursion is continued for the specified
+        number of iterations.
+
+        Parameters
+        ----------
+        U : np.ndarray
+            Input data array, columns u(n) concatenated horizontally.
+            Dimensions - N_u x T
+        iterations : int
+            How many future times to predict.
+        cold_start : boolean, optional, default=False
+            Whether to clear reservoir state before driving the reservoir with input data U.
+            If the input data follows directly after training data, a warm start is sensible.
+            However, if the provided data is temporally disconnected from the training data,
+            a cold start could be useful for reproducibility if this method will be called
+            multiple times, on the same data or on other inputs. 
+
+        Returns
+        -------
+        Yhat : np.ndarray
+            Prediction of observations. Returns feature vectors as columns stacked horizontally
+            in time. Take the transpose of this output to
+            obtain feature vectors as rows stacked vertically in time.
+        """
+        if U.shape[0] != self.output_dim:
+            raise ValueError("Method recursive_predict requires that input_dim = output_dim")
+        if cold_start:
+            self.clear_state()
+        X = self._compute_X(U)
+        Yhat = np.zeros((self.output_dim, iterations))
+        Ynext = self.W_out @ X[:,-1:]  # Maintain 2D shape
+        Yhat[:,0:1] = Ynext
+        for i in range(1, iterations):
+            Xpresent = self._compute_X(Ynext)
+            Ynext = self.W_out @ Xpresent[:,0:]  # Maintain 2D shape
+            Yhat[:,i:i+1] = Ynext
         return Yhat
 
     def score(self, U, Y_true):
@@ -378,7 +487,8 @@ class ESN:
 
         self.score(self._compute_X(U), Y_true)
 
-        if provided X corresponds to U.
+        provided X corresponds to U, and if starting from the same reservoir
+        initial state.
 
         Parameters
         ----------
