@@ -33,11 +33,12 @@ def main():
 
     trainU, trainY, valU, valY = prep_data(args.windowsize)
 
-    bo = BO(k=(2, 15), hidden_dim=(10, 100), random_state=17)
+    bo = BO(k=(2, 15), hidden_dim=(100, 200), random_state=17)
 
-    for _ in range(args.num_iter):
+    for i in range(args.num_iter):
         H_space = bo.build_options()
         h_star = bo.find_best_choice(H_space)
+        print("Iteration {}".format(i))
         print(h_star)
 
         esn = ESN(input_dim=1, hidden_dim=h_star['hidden_dim'], output_dim=1,

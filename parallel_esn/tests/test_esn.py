@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from ..esn import ESN
-from ..utils import compute_spectral_radius, chunk_data
+from ..utils import compute_spectral_radius, chunk_data, to_forecast_form
 
 
 def test_initialize_hidden_layer():
@@ -36,12 +36,12 @@ def generate_data_network():
     # Create a validation the same way, with a phase shift
     val_t = np.linspace(0, 3, 31)
     val_data = np.sin(2*np.pi*val_t + np.sqrt(2))
-    windowsize = 10
-    trainU, trainY = chunk_data(data, windowsize, 4)
-    valU, valY = chunk_data(val_data, windowsize, 4)
+    hidden = 10
+    trainU, trainY = chunk_data(data, hidden, 4)
+    valU, valY = chunk_data(val_data, hidden, 4)
 
-    esn = ESN(1, windowsize, 1, 3)
-    losses = esn.train(trainU, trainY, verbose=0)
+    esn = ESN(1, hidden, 1, 3)
+    losses = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1, warmup=0)
 
     return t, val_t, trainU, trainY, valU, valY, esn, losses
 
@@ -57,7 +57,7 @@ def test_train_validate(generate_data_network):
     # Check that the algorithm makes progress
     assert losses[0] >= losses[-1]
 
-    val_loss = esn.validate(valU, valY)
+    val_loss = esn.validate(valU, valY, warmup=0)
     # Check that the validation loss is better than the first loss in training
     assert 0 <= val_loss <= losses[0]
 
@@ -70,11 +70,48 @@ def test_score_with_X(generate_data_network):
     t, val_t, trainU, trainY, valU, valY, esn, losses = generate_data_network
 
     for s in range(trainU.shape[0]):
+        esn.clear_state()
         X = esn._compute_X(trainU[s, :, :])
+        esn.clear_state()
         prediction_from_U = esn.predict(trainU[s, :, :])
         prediction_from_X = esn.predict_with_X(X)
         np.testing.assert_allclose(prediction_from_U, prediction_from_X)
 
+        esn.clear_state()
         score_from_U = esn.score(trainU[s], trainY[s])
+        esn.clear_state()
         score_from_X = esn.score_with_X(X, trainY[s])
         np.testing.assert_allclose(score_from_U, score_from_X)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def generate_recursive_network():
+    # Create data for the following tests. Only runs
+    # once in the testing for efficiency.
+    # Run a simple test of training on sinusoidal data
+    t = np.linspace(0, 10, 101)
+    data = np.sin(2*np.pi*t)
+    # Create a validation the same way, with a phase shift
+    val_t = np.linspace(0, 3, 31)
+    val_data = np.sin(2*np.pi*val_t + np.sqrt(2))
+    hidden = 10
+    trainU, trainY, _, _ = to_forecast_form(data, -1)
+    valU, valY, _, _ = to_forecast_form(val_data, -1)
+
+    esn = ESN(1, hidden, 1, 3)
+    esn.train(trainU, trainY, verbose=0, compute_loss_freq=-1, warmup=0)
+
+    return t, val_t, trainU, trainY, valU, valY, esn
+
+
+def test_recursive_predict(generate_recursive_network):
+    t, val_t, trainU, trainY, valU, valY, esn = generate_recursive_network
+    print(trainU)
+    Yhat = esn.recursive_predict(trainU[0, :10, :], 10)
+    assert Yhat.shape[1] == 10
+
+
+def test_recursive_score(generate_recursive_network):
+    t, val_t, trainU, trainY, valU, valY, esn = generate_recursive_network
+    error = esn.recursive_score(valU[0, :, :], valY[0, :, :], 20, 10)
+    assert error < 0.5
