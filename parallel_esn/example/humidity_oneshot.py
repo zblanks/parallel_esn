@@ -8,6 +8,8 @@ from ..bo import BO
 """
 Attempts to predict a window of humidities in a one shot (multiple output) manner
 """
+
+
 def prep_data(filename, windowsize):
     """load data from the file and chunk it into windows of input"""
     # Columns are
@@ -61,11 +63,11 @@ def main():
 
     best_loss = 1e8
     best_esn = None
-    
+
     time = np.arange(args.windowsize)
-    #wi = [0,9,16,39,53,79,101,122,134]
+    # wi = [0,9,16,39,53,79,101,122,134]
     wi = np.random.choice(testU.shape[0], 9, replace=False)
-    fig, ax = plt.subplots(3, 3, figsize=(15,14))
+    fig, ax = plt.subplots(3, 3, figsize=(15, 14))
     ax = ax.flatten()
     for k in range(len(wi)):
         hum_in = unscale_data(testU[wi[k], 1:2, :].T, mu, sigma, predict_cols=[1])
@@ -87,7 +89,7 @@ def main():
         for k in range(len(wi)):
             s_pred = esn.predict(testU[wi[k], :, :])
             hum_pred = unscale_data(s_pred.T, mu, sigma, predict_cols=[1])
-            ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-', color='#BBBBBB') 
+            ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-', color='#BBBBBB')
         if val_loss < best_loss:
             best_esn = esn
             best_loss = val_loss
@@ -98,7 +100,7 @@ def main():
         ax[k].plot(time+args.windowsize, hum_obs[:, 0], '^g', label='observed')
         s_pred = best_esn.predict(testU[wi[k], :, :])
         hum_pred = unscale_data(s_pred.T, mu, sigma, predict_cols=[1])
-        ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-r', label="Best ESN") 
+        ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-r', label="Best ESN")
     plt.suptitle("Boston Humidity, One Shot Prediction")
     ax[0].set_ylabel("Humidity (percent)")
     ax[3].set_ylabel("Humidity (percent)")

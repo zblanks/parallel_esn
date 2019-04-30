@@ -9,6 +9,8 @@ from ..bo import BO
 Attempts to predict a window of humidities in a recursive manner, producing more
 accurate results for near term.
 """
+
+
 def prep_data(filename, in_len, pred_len):
     """load data from the file and chunk it into windows of input"""
     # Columns are
@@ -39,10 +41,10 @@ def prep_data(filename, in_len, pred_len):
     val_data = scale_data(val_data, mu_arr, sigma_arr)
     test_data = scale_data(test_data, mu_arr, sigma_arr)
 
-    # We need to convert the time series data to forecast form for one-step 
+    # We need to convert the time series data to forecast form for one-step
     # prediction training. For simplicity we will discard the remainder batches rU, rY
     train_batch_size = 200
-    val_batch_size = 200
+    val_batch_size = in_len + pred_len + 1
     test_batch_size = in_len + pred_len + 1
     trainU, trainY, rU, rY = to_forecast_form(train_data, batch_size=train_batch_size)
     valU, valY, rU, rY = to_forecast_form(val_data, batch_size=val_batch_size)
@@ -71,7 +73,7 @@ def main():
 
     best_loss = 1e8
     best_esn = None
-    
+
     time = np.arange(in_len+pred_len+1)
 
     # To choose which runs to look at at random
@@ -82,11 +84,11 @@ def main():
     wi = np.random.choice(testU.shape[0], 9, replace=replace)
 
     # Humidity Figure
-    fig_h, ax_h = plt.subplots(3, 3, figsize=(15,14))
+    fig_h, ax_h = plt.subplots(3, 3, figsize=(15, 14))
     ax_h = ax_h.flatten()
 
     # Temperature Figure
-    fig_t, ax_t = plt.subplots(3, 3, figsize=(15,14))
+    fig_t, ax_t = plt.subplots(3, 3, figsize=(15, 14))
     ax_t = ax_t.flatten()
     for k in range(len(wi)):
         dat_in = unscale_data(testU[wi[k], :, :in_len].T, mu, sigma)
@@ -103,14 +105,16 @@ def main():
                   spectral_radius=h_star['spectral_radius'],
                   p=h_star['p'], alpha=h_star['alpha'], beta=h_star['beta'])
 
-        val_loss = esn.train_validate(trainU, trainY, valU, valY, verbose=1, compute_loss_freq=10)
+        # val_loss = esn.train_validate(trainU, trainY, valU, valY, verbose=1, compute_loss_freq=10)
+        val_loss = esn.recursive_train_validate(trainU, trainY, valU, valY,
+                                                in_len, pred_len, verbose=1, compute_loss_freq=10)
         print("validation loss = {}".format(val_loss))
 
         for k in range(len(wi)):
             s_pred = esn.recursive_predict(testU[wi[k], :, :in_len], pred_len)
             dat_pred = unscale_data(s_pred.T, mu, sigma)
-            ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 0], '-', color='#888888', alpha=0.1) 
-            ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 1], '-', color='#888888', alpha=0.1) 
+            ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 0], '-', color='#888888', alpha=0.1)
+            ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 1], '-', color='#888888', alpha=0.1)
         if val_loss < best_loss:
             best_esn = esn
             best_loss = val_loss
@@ -122,8 +126,8 @@ def main():
         ax_h[k].plot(time[in_len:in_len+pred_len], dat_obs[:, 1], '^g', label='observed')
         s_pred = best_esn.recursive_predict(testU[wi[k], :, :in_len], pred_len)
         dat_pred = unscale_data(s_pred.T, mu, sigma)
-        ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 0], '-r', label="Best ESN") 
-        ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 1], '-r', label="Best ESN") 
+        ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 0], '-r', label="Best ESN")
+        ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 1], '-r', label="Best ESN")
     plt.figure(fig_t.number)
     plt.suptitle("Boston Temperature, Recursive Prediction")
     plt.figure(fig_h.number)

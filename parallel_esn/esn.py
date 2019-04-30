@@ -175,7 +175,7 @@ class ESN:
             xti = np.tanh(self.W_in @ X[:Nu+1, n] + self.W @ X[Nu+1:, n-1])
             X[Nu+1:, n] = (1.-self.alpha)*X[Nu+1:, n-1] + self.alpha*xti
         # Save final reservoir state
-        self.X0 = X[:,-1]
+        self.X0 = X[:, -1]
         return X
 
     def _compute_Wout(self):
@@ -194,13 +194,11 @@ class ESN:
 
         self.W_out = np.matmul(self.YXt, inner)
 
-
     def clear_state(self):
         """
         Clears X0, the reservoir's memory of previous inputs and neural state
         """
         self.X0 = np.zeros((1+self.input_dim+self.hidden_dim))
-
 
     def reset(self):
         """
@@ -210,7 +208,6 @@ class ESN:
         self.YXt = np.zeros((self.output_dim, 1+self.input_dim+self.hidden_dim))
         self.XXt = np.zeros((1+self.input_dim+self.hidden_dim, 1+self.input_dim+self.hidden_dim))
         self.clear_state()
-
 
     def train(self, batchU, batchY_true, clear_state=False, warmup=10, verbose=1,
               compute_loss_freq=-1):
@@ -304,7 +301,7 @@ class ESN:
         warmup : int, optional, default=10
             The number of states to discard at the beginning of each validation batch, before initial
             transients in the reservoir have died out. The amount to discard depends on
-            the memory of the network and typically ranges from 10s to 100s. 
+            the memory of the network and typically ranges from 10s to 100s.
         verbose : int, optional, default=1
             Whether to print status of training
 
@@ -321,6 +318,41 @@ class ESN:
                           "warm-up time. Warm-up set to zero")
         for s in range(nseq):
             curr_loss = self.score(batchU[s, :, warmup:], batchY_true[s, :, warmup:])
+            loss += curr_loss
+            if verbose == 1:
+                progress(s, nseq, status='Validation: loss = {0:.4f}'.format(curr_loss))
+        return loss/nseq
+
+    def recursive_validate(self, batchU, batchY_true, input_len, pred_len, verbose=1):
+        """
+        Get loss on validation set for recursive one-step prediction. Uses recursive_score
+        to compute the total error.
+
+        Parameters
+        ----------
+        batchU : array_like of np.ndarray
+            Batch of input data arrays, columns u(n) concatenated horizontally
+            Dimensions - Batch_size x N_x x T_i
+        batchY_true : array_like of np.ndarray
+            Batch of true output data arrays
+            Dimensions - Batch_size x N_y x T_i
+        input_len : int
+            The input length to be fed to the ESN before recursive single-step prediction.
+        pred_len : int
+            The number of predictions desired.
+        verbose : int, optional, default=1
+            Whether to print status of training
+
+        Returns
+        -------
+        loss : float
+            Returns the average of the NMSE losses computed on each sequence
+        """
+        nseq = batchU.shape[0]
+        loss = 0.
+        for s in range(nseq):
+            curr_loss = self.recursive_score(batchU[s, :, :], batchY_true[s, :, :],
+                                             input_len, pred_len)
             loss += curr_loss
             if verbose == 1:
                 progress(s, nseq, status='Validation: loss = {0:.4f}'.format(curr_loss))
@@ -349,7 +381,7 @@ class ESN:
         warmup : int, optional, default=10
             The number of states to discard at the beginning of each train/validation batch,
             before initial transients in the reservoir have died out. The amount to discard
-            depends on the memory of the network and typically ranges from 10s to 100s. 
+            depends on the memory of the network and typically ranges from 10s to 100s.
         verbose : int, optional, default=1
             Whether to print status of training
         compute_loss_freq : int, optional, default=-1
@@ -364,6 +396,50 @@ class ESN:
         self.train(trainU, trainY, warmup=warmup,
                    verbose=verbose, compute_loss_freq=compute_loss_freq)
         return self.validate(valU, valY, warmup=warmup, verbose=verbose)
+
+    def recursive_train_validate(self, trainU, trainY, valU, valY,
+                                 input_len, pred_len,
+                                 warmup=10, verbose=1, compute_loss_freq=-1):
+        """
+        Train on provided training data, and immediately validate
+        and return validation loss.
+
+        Parameters
+        ----------
+        trainU : array_like of np.ndarray
+            Batch of training input data arrays, columns u(n) concatenated horizontally.
+            Dimensions - Batch_size x N_x x T_i
+        trainY : array_like of np.ndarray
+            Batch of training true output data arrays.
+            Dimensions - Batch_size x N_y x T_i
+        valU : array_like of np.ndarray
+            Batch of validation input data arrays, columns u(n) concatenated horizontally.
+            Dimensions - Batch_size x N_x x T_i
+        valY : array_like of np.ndarray
+            Batch of validation true output data arrays.
+            Dimensions - Batch_size x N_y x T_i
+        input_len : int
+            The input length to be fed to the ESN before recursive single-step prediction.
+        pred_len : int
+            The number of predictions desired.
+        warmup : int, optional, default=10
+            The number of states to discard at the beginning of each train/validation batch,
+            before initial transients in the reservoir have died out. The amount to discard
+            depends on the memory of the network and typically ranges from 10s to 100s.
+        verbose : int, optional, default=1
+            Whether to print status of training
+        compute_loss_freq : int, optional, default=-1
+            How often to compute training loss. Only for information, not necessary
+            for training. Negative value disables computing training loss.
+
+        Returns
+        -------
+        loss : float
+            Returns the sum of the losses computed on each sequence in validation set.
+        """
+        self.train(trainU, trainY, warmup=warmup,
+                   verbose=verbose, compute_loss_freq=compute_loss_freq)
+        return self.recursive_validate(valU, valY, input_len, pred_len, verbose=verbose)
 
     def predict(self, U):
         """
@@ -426,7 +502,7 @@ class ESN:
         dimensions of vector y(t) must match the dimensions of u(t).
 
         For the first step, observed values u(t) for t=0..T-1 are used to produce the first
-        predicted value y(t) = \hat{u}(t+1), which is then fed back to the network as an
+        predicted value y(t) = hat{u}(t+1), which is then fed back to the network as an
         input in order to produce y(t+1). This recursion is continued for the specified
         number of iterations.
 
@@ -442,7 +518,7 @@ class ESN:
             If the input data follows directly after training data, a warm start is sensible.
             However, if the provided data is temporally disconnected from the training data,
             a cold start could be useful for reproducibility if this method will be called
-            multiple times, on the same data or on other inputs. 
+            multiple times, on the same data or on other inputs.
 
         Returns
         -------
@@ -457,13 +533,54 @@ class ESN:
             self.clear_state()
         X = self._compute_X(U)
         Yhat = np.zeros((self.output_dim, iterations))
-        Ynext = self.W_out @ X[:,-1:]  # Maintain 2D shape
-        Yhat[:,0:1] = Ynext
+        Ynext = self.W_out @ X[:, -1:]  # Maintain 2D shape
+        Yhat[:, 0:1] = Ynext
         for i in range(1, iterations):
             Xpresent = self._compute_X(Ynext)
-            Ynext = self.W_out @ Xpresent[:,0:]  # Maintain 2D shape
-            Yhat[:,i:i+1] = Ynext
+            Ynext = self.W_out @ Xpresent[:, 0:]  # Maintain 2D shape
+            Yhat[:, i:i+1] = Ynext
         return Yhat
+
+    def recursive_score(self, U, Y_true, input_len, pred_len):
+        """
+        Computes loss in recursive one-step prediction, intended for validation set.
+
+        Parameters
+        ----------
+        U : np.ndarray
+            Input data array, columns u(n) concatenated horizontally.
+            Dimensions - N_u x T
+        Y_true : np.ndarray
+            Target output array,  y(n) concatenated horizontally in time.
+            Dimensions - N_y x T
+        input_len : int
+            The input length to be fed to the ESN before recursive single-step prediction.
+        pred_len : int
+            The number of predictions desired.
+
+        Returns
+        -------
+        error : float
+            Normalized root mean square error (NRMSE). On the prediction. Each feature's
+            NRMSE is computed separately and averaged together at the end.
+
+        """
+        if U.shape[1] < input_len + pred_len:
+            raise ValueError("Method recursive_score requires that U has at least input_len + "
+                             "pred_len points in time. U only has {} time points"
+                             .format(U.shape[1]))
+        Yhat = self.recursive_predict(U[:, :input_len], pred_len)
+        num_features = Y_true.shape[0]
+        error = 0.
+        for j in range(num_features):
+            strt = input_len - 1
+            end = strt + pred_len
+            var = np.var(Y_true[j, strt:end])
+            if var == 0.:
+                var = 1.
+            error += np.sqrt(mean_squared_error(Y_true[j, strt:end], Yhat[j, :])
+                             / var)
+        return error/num_features
 
     def score(self, U, Y_true):
         """

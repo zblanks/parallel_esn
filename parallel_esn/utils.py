@@ -54,10 +54,10 @@ def to_forecast_form(timeseries, batch_size=-1):
     Converts timeseries data into input and target batches that can be
     used for training an ESN to perform single-step-forecasting.
 
-    For a given time series of feature vectors, create batches of inputs 
+    For a given time series of feature vectors, create batches of inputs
     batchU and corresponding targets batchY. Each Y in batchY consists of
     feature vectors u which are one timestep in the future relative to the
-    feature vector in U with the same column index. 
+    feature vector in U with the same column index.
     i.e.
 
     Y[:, t] = U[:, t+1]
@@ -113,7 +113,7 @@ def to_forecast_form(timeseries, batch_size=-1):
     length = timeseries.shape[0]
     # Get transposed view for later array assignment convenience
     timeseriesT = timeseries.T
-    if length - 1< batch_size or batch_size <= 0:
+    if length - 1 < batch_size or batch_size <= 0:
         batch_size = length - 1
     num_batch = (length - 1)//batch_size
     remainder_size = (length - 1) - num_batch * batch_size
@@ -131,7 +131,7 @@ def to_forecast_form(timeseries, batch_size=-1):
     remainderU[0, :, :] = timeseriesT[:, batch_size*num_batch:-1]
     remainderY[0, :, :] = timeseriesT[:, batch_size*num_batch+1:]
     return batchU, batchY, remainderU, remainderY
- 
+
 
 def chunk_data(timeseries, windowsize, stride=-1, predict_cols=[]):
     """
