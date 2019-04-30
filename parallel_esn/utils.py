@@ -133,7 +133,7 @@ def to_forecast_form(timeseries, batch_size=-1):
     return batchU, batchY, remainderU, remainderY
  
 
-def chunk_data(timeseries, windowsize, stride, predict_cols=[]):
+def chunk_data(timeseries, windowsize, stride=-1, predict_cols=[]):
     """
     Partitions time series data
 
@@ -147,9 +147,10 @@ def chunk_data(timeseries, windowsize, stride, predict_cols=[]):
     windowsize : int
         The number of data points in time to be used as input (equal to
         expected number of outputs)
-    stride : int
+    stride : int, optional, default=-1
         Number of points to shift in time to generate a subsequent input
-        window/output window of data.
+        window/output window of data. If negative or zero, stride is set
+        to windowsize to best take advantage of ESN memory.
     predict_cols : array_like of int, optional
         List of column indices of timeseries to return in batchY. Should
         correspond to the features you want to predict. Implied order
@@ -200,6 +201,8 @@ def chunk_data(timeseries, windowsize, stride, predict_cols=[]):
                           "and provided windowsize needs at least "
                           "2*windowsize = {} time points."
                           .format(length, 2*windowsize)))
+    if stride <= 0:
+        stride = windowsize
     num_chunks = (length - 2*windowsize)//stride + 1
     batchU = np.zeros((num_chunks, feature_len, windowsize))
     batchY = np.zeros((num_chunks, pred_len, windowsize))

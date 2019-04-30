@@ -5,7 +5,10 @@ from ..esn import ESN
 from ..utils import chunk_data, standardize_traindata, scale_data, unscale_data
 from ..bo import BO
 
-def prep_data(filename, windowsize, stride):
+"""
+Attempts to predict a window of humidities in a one shot (multiple output) manner
+"""
+def prep_data(filename, windowsize):
     """load data from the file and chunk it into windows of input"""
     # Columns are
     # 0:datetime, 1:temperature, 2:humidity, 3:pressure, 4:wind_direction, 5:wind_speed
@@ -37,9 +40,9 @@ def prep_data(filename, windowsize, stride):
 
     # We chunk the training data, but we only want to predict the humidity
     # which is in column 1 of data
-    trainU, trainY = chunk_data(train_data, windowsize, stride, predict_cols=[1])
-    valU, valY = chunk_data(val_data, windowsize, stride, predict_cols=[1])
-    testU, testY = chunk_data(test_data, windowsize, stride, predict_cols=[1])
+    trainU, trainY = chunk_data(train_data, windowsize, predict_cols=[1])
+    valU, valY = chunk_data(val_data, windowsize, predict_cols=[1])
+    testU, testY = chunk_data(test_data, windowsize, predict_cols=[1])
 
     return trainU, trainY, valU, valY, testU, testY, mu_arr, sigma_arr
 
@@ -47,14 +50,12 @@ def prep_data(filename, windowsize, stride):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--windowsize', type=int, nargs='?', default=24)
-    parser.add_argument('--stride', type=int, nargs='?', default=24)
     parser.add_argument('--num_iter', type=int, nargs='?', default=5)
     parser.add_argument('--filename', type=str, nargs='?', default='boston_weather.csv')
     args = parser.parse_args()
 
     trainU, trainY, valU, valY, testU, testY, mu, sigma = prep_data(args.filename,
-                                                                    args.windowsize,
-                                                                    args.stride)
+                                                                    args.windowsize)
 
     bo = BO(k=(2, 50), hidden_dim=(200, 400), random_state=12)
 
@@ -86,7 +87,7 @@ def main():
         for k in range(len(wi)):
             s_pred = esn.predict(testU[wi[k], :, :])
             hum_pred = unscale_data(s_pred.T, mu, sigma, predict_cols=[1])
-            ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-', color='#777777') 
+            ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-', color='#BBBBBB') 
         if val_loss < best_loss:
             best_esn = esn
             best_loss = val_loss
@@ -98,7 +99,7 @@ def main():
         s_pred = best_esn.predict(testU[wi[k], :, :])
         hum_pred = unscale_data(s_pred.T, mu, sigma, predict_cols=[1])
         ax[k].plot(time+args.windowsize, hum_pred[:, 0], '-r', label="Best ESN") 
-    plt.suptitle("Boston Humidity")
+    plt.suptitle("Boston Humidity, One Shot Prediction")
     ax[0].set_ylabel("Humidity (percent)")
     ax[3].set_ylabel("Humidity (percent)")
     ax[6].set_ylabel("Humidity (percent)")
@@ -111,13 +112,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-#time = np.arange(windowsize)
-#plt.plot(time, valU[0, 0, :], 'ob', label='input')
-#pred = esn.predict(valU[0, 0:1, :])
-#plt.plot(time+windowsize, pred[0, :], '-r', label='predicted')
-#plt.plot(time+windowsize, valY[0, 0, :], '^g', label='observed')
-#plt.title("PJM Normalized Power Consumption")
-#plt.ylabel("Arb. Units.")
-#plt.xlabel("Hours")
-#plt.legend(loc=2, numpoints=1)
-#plt.show()

@@ -289,7 +289,7 @@ class ESN:
                 progress(s, nseq, status=status)
         return loss
 
-    def validate(self, batchU, batchY_true, verbose=1):
+    def validate(self, batchU, batchY_true, warmup=10, verbose=1):
         """
         Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true
 
@@ -301,6 +301,12 @@ class ESN:
         batchY_true : array_like of np.ndarray
             Batch of true output data arrays
             Dimensions - Batch_size x N_y x T_i
+        warmup : int, optional, default=10
+            The number of states to discard at the beginning of each validation batch, before initial
+            transients in the reservoir have died out. The amount to discard depends on
+            the memory of the network and typically ranges from 10s to 100s. 
+        verbose : int, optional, default=1
+            Whether to print status of training
 
         Returns
         -------
@@ -309,14 +315,19 @@ class ESN:
         """
         nseq = batchU.shape[0]
         loss = 0.
+        if warmup >= batchU.shape[2]:
+            warmup = 0
+            warnings.warn("Warning: Validation batch size is too small for specified "
+                          "warm-up time. Warm-up set to zero")
         for s in range(nseq):
-            curr_loss = self.score(batchU[s, :, :], batchY_true[s, :, :])
+            curr_loss = self.score(batchU[s, :, warmup:], batchY_true[s, :, warmup:])
             loss += curr_loss
             if verbose == 1:
                 progress(s, nseq, status='Validation: loss = {0:.4f}'.format(curr_loss))
         return loss/nseq
 
-    def train_validate(self, trainU, trainY, valU, valY, verbose=1, compute_loss_freq=-1):
+    def train_validate(self, trainU, trainY, valU, valY,
+                       warmup=10, verbose=1, compute_loss_freq=-1):
         """
         Train on provided training data, and immediately validate
         and return validation loss.
@@ -335,6 +346,10 @@ class ESN:
         valY : array_like of np.ndarray
             Batch of validation true output data arrays.
             Dimensions - Batch_size x N_y x T_i
+        warmup : int, optional, default=10
+            The number of states to discard at the beginning of each train/validation batch,
+            before initial transients in the reservoir have died out. The amount to discard
+            depends on the memory of the network and typically ranges from 10s to 100s. 
         verbose : int, optional, default=1
             Whether to print status of training
         compute_loss_freq : int, optional, default=-1
@@ -346,8 +361,9 @@ class ESN:
         loss : float
             Returns the sum of the losses computed on each sequence in validation set.
         """
-        self.train(trainU, trainY, verbose=verbose, compute_loss_freq=compute_loss_freq)
-        return self.validate(valU, valY, verbose=verbose)
+        self.train(trainU, trainY, warmup=warmup,
+                   verbose=verbose, compute_loss_freq=compute_loss_freq)
+        return self.validate(valU, valY, warmup=warmup, verbose=verbose)
 
     def predict(self, U):
         """
