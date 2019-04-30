@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from ..esn import ESN
 from ..utils import chunk_data, standardize_traindata, scale_data
 
+# Example using real data, one shot prediction
+
 # Load data
 fname = resource_filename('parallel_esn', 'data/PJM_Load_hourly.csv')
 data = np.loadtxt(fname, delimiter=',', skiprows=1, usecols=[1])
@@ -37,7 +39,7 @@ plt.plot(time, valU[0, 0, :], 'ob', label='input')
 pred = esn.predict(valU[0, 0:1, :])
 plt.plot(time+windowsize, pred[0, :], '-r', label='predicted')
 plt.plot(time+windowsize, valY[0, 0, :], '^g', label='observed')
-plt.title("PJM Standardized Power Consumption")
+plt.title("PJM Standardized Power Consumption (One Shot)")
 plt.ylabel("Arb. Units.")
 plt.xlabel("Hours")
 plt.legend(loc=2, numpoints=1)

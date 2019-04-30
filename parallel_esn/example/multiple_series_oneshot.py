@@ -103,7 +103,7 @@ def main():
     plt.plot(time+args.windowsize, temp_pred[:, 0], '-r', label=("predicted (double timeseries)\n"
                                                                  "loss = {0:.3f}".format(val_loss)))
 
-    plt.title("Prediction power gain using correlated timeseries (on test data)")
+    plt.title("Prediction power gain using correlated timeseries (one shot)")
     plt.legend(bbox_to_anchor=(0.8, 0), loc='lower left', numpoints=1)
     plt.subplots_adjust(right=0.7)
     plt.show()
