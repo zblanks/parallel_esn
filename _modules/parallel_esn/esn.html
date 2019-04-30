@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post21+g07942ac documentation</title>
+  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post29+g5b59ada documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.post21+g07942ac
+                0.post29+g5b59ada
               </div>
             
           
@@ -158,6 +158,8 @@
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">create_rng</span><span class="p">,</span> <span class="n">compute_spectral_radius</span>
+<span class="kn">from</span> <span class="nn">.progress</span> <span class="k">import</span> <span class="n">progress</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 
 <div class="viewcode-block" id="ESN"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN">[docs]</a><span class="k">class</span> <span class="nc">ESN</span><span class="p">:</span>
@@ -233,6 +235,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_hidden_layer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_input_layer</span><span class="p">()</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">X0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">input_dim</span><span class="o">+</span><span class="n">hidden_dim</span><span class="p">))</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">output_dim</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="n">input_dim</span><span class="o">+</span><span class="n">hidden_dim</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">input_dim</span><span class="o">+</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="n">input_dim</span><span class="o">+</span><span class="n">hidden_dim</span><span class="p">))</span>
 
@@ -292,6 +296,10 @@
 <span class="sd">        where the column vectors [1;u(n);x(n)] are concatenated</span>
 <span class="sd">        horizontally over the entire time n = 1,...,T</span>
 
+<span class="sd">        X calculation is started from the saved reservoir state X0,</span>
+<span class="sd">        which is essentially the -1th column of X, i.e. the time right</span>
+<span class="sd">        before t = 0.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        U : np.ndarray</span>
@@ -310,15 +318,20 @@
         <span class="n">Nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">Nu</span> <span class="o">+</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
 
-        <span class="c1"># Do first step</span>
+        <span class="c1"># Do first step. It computes the first column of X based off of</span>
+        <span class="c1"># the existing reservoir state X0, which is just zero if the reservoir</span>
+        <span class="c1"># is not warmed up, or the state from the last training/prediction if</span>
+        <span class="c1"># it is.</span>
         <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>  <span class="c1"># can potentially add random init</span>
-        <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">xti</span>             <span class="c1"># as a hyper-parameter</span>
+        <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">xti</span>
 
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
             <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="n">n</span><span class="p">]</span>
             <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="o">*</span><span class="n">xti</span>
+        <span class="c1"># Save final reservoir state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X0</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">X</span>
 
     <span class="k">def</span> <span class="nf">_compute_Wout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -337,7 +350,23 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YXt</span><span class="p">,</span> <span class="n">inner</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ESN.train"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="ESN.clear_state"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.clear_state">[docs]</a>    <span class="k">def</span> <span class="nf">clear_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears X0, the reservoir&#39;s memory of previous inputs and neural state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">X0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ESN.reset"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset output layer training and clear state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_state</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ESN.train"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">clear_state</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trains on U&#39;s and corresponding Y_true&#39;s, batched in first index.</span>
 
@@ -349,30 +378,71 @@
 <span class="sd">        batchY_true : array_like of np.ndarray</span>
 <span class="sd">            batch of true output data arrays</span>
 <span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
-<span class="sd">        verbose : int, optional</span>
+<span class="sd">        clear_state : boolean, optional, default=False</span>
+<span class="sd">            Whether to clear the reservoir memory in between batches. If False, the training</span>
+<span class="sd">            on the batches is equivalent to if the batches were all concatenated into a single</span>
+<span class="sd">            time series.</span>
+<span class="sd">        warmup : int, optional, default=10</span>
+<span class="sd">            The number of states to discard at the beginning of training, before initial</span>
+<span class="sd">            transients in the reservoir have died out. The amount to discard depends on</span>
+<span class="sd">            the memory of the network and typically ranges from 10s to 100s. If batches are</span>
+<span class="sd">            to be treated as independent, with clear_state=True, warmups can typically be shorter</span>
+<span class="sd">            since the zeroed reservoir initialization would be the normal operating mode of</span>
+<span class="sd">            the ESN.</span>
+<span class="sd">        verbose : int, optional, default=1</span>
 <span class="sd">            Whether to print status of training</span>
+<span class="sd">        compute_loss_freq : int, default=-1</span>
+<span class="sd">            How often to compute training loss. Only for information, not necessary</span>
+<span class="sd">            for training. Negative value disables computing training loss.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        loss : np.ndarray</span>
-<span class="sd">            Returns the loss computed on each sequence, array of length batchsize</span>
+<span class="sd">            Returns the loss computed on each sequence where loss was computed, array</span>
+<span class="sd">            of length ((Batch_size-1) // compute_loss_freq) + 1. None returned if</span>
+<span class="sd">            compute_loss_freq is less than equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">batchY_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;batchU and batchY need to have the same first dimension&#39;</span><span class="p">)</span>
         <span class="n">nseq</span> <span class="o">=</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nseq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compute_loss_freq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nseq</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">compute_loss_freq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nseq</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">clear_state</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clear_state</span><span class="p">()</span>
             <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_X</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
+            <span class="k">if</span> <span class="n">warmup</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Need to discard more states</span>
+                <span class="k">if</span> <span class="n">warmup</span> <span class="o">&gt;=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">clear_state</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: specified to discard more warmup states than &quot;</span>
+                                      <span class="s2">&quot;there are in the batch of input data. Network is not &quot;</span>
+                                      <span class="s2">&quot;being trained.&quot;</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="n">nseq</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: specified to discard more warmup states than &quot;</span>
+                                      <span class="s2">&quot;there are input data. Network was not trained.&quot;</span><span class="p">)</span>
+                    <span class="n">warmup</span> <span class="o">-=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># ignore all X in this batch, decrease warmup count</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="n">warmup</span><span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span>
+                    <span class="n">warmup</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Done with warmup</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># Done with warmup</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compute_Wout</span><span class="p">()</span>
-            <span class="c1"># Use precomputed X instead of recomputing it from U</span>
-            <span class="n">loss</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_with_X</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Training:&#39;</span>
+            <span class="k">if</span> <span class="n">compute_loss_freq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="o">%</span> <span class="n">compute_loss_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Use precomputed X instead of recomputing it from U</span>
+                    <span class="n">loss</span><span class="p">[</span><span class="n">s</span> <span class="o">//</span> <span class="n">compute_loss_freq</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_with_X</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+                    <span class="n">status</span> <span class="o">+=</span> <span class="s1">&#39; loss = </span><span class="si">{0:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="n">s</span> <span class="o">//</span> <span class="n">compute_loss_freq</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loss = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="n">s</span><span class="p">]))</span>
+                <span class="n">progress</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">nseq</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">loss</span></div>
 
-<div class="viewcode-block" id="ESN.validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">):</span>
+<div class="viewcode-block" id="ESN.validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true</span>
 
@@ -384,6 +454,50 @@
 <span class="sd">        batchY_true : array_like of np.ndarray</span>
 <span class="sd">            Batch of true output data arrays</span>
 <span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        warmup : int, optional, default=10</span>
+<span class="sd">            The number of states to discard at the beginning of each validation batch, before initial</span>
+<span class="sd">            transients in the reservoir have died out. The amount to discard depends on</span>
+<span class="sd">            the memory of the network and typically ranges from 10s to 100s.</span>
+<span class="sd">        verbose : int, optional, default=1</span>
+<span class="sd">            Whether to print status of training</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        loss : float</span>
+<span class="sd">            Returns the average of the NMSE losses computed on each sequence</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nseq</span> <span class="o">=</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">if</span> <span class="n">warmup</span> <span class="o">&gt;=</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="n">warmup</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: Validation batch size is too small for specified &quot;</span>
+                          <span class="s2">&quot;warm-up time. Warm-up set to zero&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nseq</span><span class="p">):</span>
+            <span class="n">curr_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="n">warmup</span><span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="n">warmup</span><span class="p">:])</span>
+            <span class="n">loss</span> <span class="o">+=</span> <span class="n">curr_loss</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">progress</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">nseq</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;Validation: loss = </span><span class="si">{0:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_loss</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">loss</span><span class="o">/</span><span class="n">nseq</span></div>
+
+<div class="viewcode-block" id="ESN.recursive_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.recursive_validate">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get loss on validation set for recursive one-step prediction. Uses recursive_score</span>
+<span class="sd">        to compute the total error.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batchU : array_like of np.ndarray</span>
+<span class="sd">            Batch of input data arrays, columns u(n) concatenated horizontally</span>
+<span class="sd">            Dimensions - Batch_size x N_x x T_i</span>
+<span class="sd">        batchY_true : array_like of np.ndarray</span>
+<span class="sd">            Batch of true output data arrays</span>
+<span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        input_len : int</span>
+<span class="sd">            The input length to be fed to the ESN before recursive single-step prediction.</span>
+<span class="sd">        pred_len : int</span>
+<span class="sd">            The number of predictions desired.</span>
+<span class="sd">        verbose : int, optional, default=1</span>
+<span class="sd">            Whether to print status of training</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -393,10 +507,15 @@
         <span class="n">nseq</span> <span class="o">=</span> <span class="n">batchU</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nseq</span><span class="p">):</span>
-            <span class="n">loss</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+            <span class="n">curr_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recursive_score</span><span class="p">(</span><span class="n">batchU</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span>
+                                             <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">+=</span> <span class="n">curr_loss</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">progress</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">nseq</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s1">&#39;Validation: loss = </span><span class="si">{0:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">curr_loss</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">loss</span><span class="o">/</span><span class="n">nseq</span></div>
 
-<div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span>
+                       <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Train on provided training data, and immediately validate</span>
 <span class="sd">        and return validation loss.</span>
@@ -415,16 +534,68 @@
 <span class="sd">        valY : array_like of np.ndarray</span>
 <span class="sd">            Batch of validation true output data arrays.</span>
 <span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
-<span class="sd">        verbose : int, optional</span>
+<span class="sd">        warmup : int, optional, default=10</span>
+<span class="sd">            The number of states to discard at the beginning of each train/validation batch,</span>
+<span class="sd">            before initial transients in the reservoir have died out. The amount to discard</span>
+<span class="sd">            depends on the memory of the network and typically ranges from 10s to 100s.</span>
+<span class="sd">        verbose : int, optional, default=1</span>
 <span class="sd">            Whether to print status of training</span>
+<span class="sd">        compute_loss_freq : int, optional, default=-1</span>
+<span class="sd">            How often to compute training loss. Only for information, not necessary</span>
+<span class="sd">            for training. Negative value disables computing training loss.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        loss : float</span>
 <span class="sd">            Returns the sum of the losses computed on each sequence in validation set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ESN.recursive_train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.recursive_train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span>
+                                 <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">,</span>
+                                 <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train on provided training data, and immediately validate</span>
+<span class="sd">        and return validation loss.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainU : array_like of np.ndarray</span>
+<span class="sd">            Batch of training input data arrays, columns u(n) concatenated horizontally.</span>
+<span class="sd">            Dimensions - Batch_size x N_x x T_i</span>
+<span class="sd">        trainY : array_like of np.ndarray</span>
+<span class="sd">            Batch of training true output data arrays.</span>
+<span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        valU : array_like of np.ndarray</span>
+<span class="sd">            Batch of validation input data arrays, columns u(n) concatenated horizontally.</span>
+<span class="sd">            Dimensions - Batch_size x N_x x T_i</span>
+<span class="sd">        valY : array_like of np.ndarray</span>
+<span class="sd">            Batch of validation true output data arrays.</span>
+<span class="sd">            Dimensions - Batch_size x N_y x T_i</span>
+<span class="sd">        input_len : int</span>
+<span class="sd">            The input length to be fed to the ESN before recursive single-step prediction.</span>
+<span class="sd">        pred_len : int</span>
+<span class="sd">            The number of predictions desired.</span>
+<span class="sd">        warmup : int, optional, default=10</span>
+<span class="sd">            The number of states to discard at the beginning of each train/validation batch,</span>
+<span class="sd">            before initial transients in the reservoir have died out. The amount to discard</span>
+<span class="sd">            depends on the memory of the network and typically ranges from 10s to 100s.</span>
+<span class="sd">        verbose : int, optional, default=1</span>
+<span class="sd">            Whether to print status of training</span>
+<span class="sd">        compute_loss_freq : int, optional, default=-1</span>
+<span class="sd">            How often to compute training loss. Only for information, not necessary</span>
+<span class="sd">            for training. Negative value disables computing training loss.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        loss : float</span>
+<span class="sd">            Returns the sum of the losses computed on each sequence in validation set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">recursive_validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ESN.predict"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -439,11 +610,17 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Yhat : np.ndarray</span>
-<span class="sd">            Prediction of observations.</span>
+<span class="sd">            Prediction of observations. Returns feature vectors as columns stacked horizontally</span>
+<span class="sd">            in time. Take the transpose of this output to</span>
+<span class="sd">            obtain feature vectors as rows stacked vertically in time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>  <span class="c1"># Check if W_out exists yet</span>
             <span class="k">raise</span> <span class="ne">UnboundLocalError</span><span class="p">(</span><span class="s1">&#39;Must train network before predictions can be made.&#39;</span><span class="p">)</span>
         <span class="n">W_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span>
+        <span class="k">if</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dimension error: provided U input data array does not have &quot;</span>
+                             <span class="s2">&quot;the same number of features as the input data it was trained &quot;</span>
+                             <span class="s2">&quot;on.&quot;</span><span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_X</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
         <span class="n">Yhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">W_out</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Yhat</span></div>
@@ -451,7 +628,8 @@
 <div class="viewcode-block" id="ESN.predict_with_X"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.predict_with_X">[docs]</a>    <span class="k">def</span> <span class="nf">predict_with_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Predicts Yhat, output observations, given X already generated</span>
-<span class="sd">        from input data U.</span>
+<span class="sd">        from input data U. Useful if X has already been computed and a prediction</span>
+<span class="sd">        is desired without affecting the current state of the reservoir.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -470,6 +648,95 @@
         <span class="n">W_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span>
         <span class="n">Yhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">W_out</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Yhat</span></div>
+
+<div class="viewcode-block" id="ESN.recursive_predict"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.recursive_predict">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="n">cold_start</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predicts Yhat, output observations following the given time series of inputs U</span>
+<span class="sd">        This method assumes that the network has been trained to produce one-step-forecasting,</span>
+<span class="sd">        where the output y(t) corresponds to u(t+1), i.e. what the next input would have been.</span>
+<span class="sd">        Currently this method only supports predicting all features provided as input; the</span>
+<span class="sd">        dimensions of vector y(t) must match the dimensions of u(t).</span>
+
+<span class="sd">        For the first step, observed values u(t) for t=0..T-1 are used to produce the first</span>
+<span class="sd">        predicted value y(t) = hat{u}(t+1), which is then fed back to the network as an</span>
+<span class="sd">        input in order to produce y(t+1). This recursion is continued for the specified</span>
+<span class="sd">        number of iterations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U : np.ndarray</span>
+<span class="sd">            Input data array, columns u(n) concatenated horizontally.</span>
+<span class="sd">            Dimensions - N_u x T</span>
+<span class="sd">        iterations : int</span>
+<span class="sd">            How many future times to predict.</span>
+<span class="sd">        cold_start : boolean, optional, default=False</span>
+<span class="sd">            Whether to clear reservoir state before driving the reservoir with input data U.</span>
+<span class="sd">            If the input data follows directly after training data, a warm start is sensible.</span>
+<span class="sd">            However, if the provided data is temporally disconnected from the training data,</span>
+<span class="sd">            a cold start could be useful for reproducibility if this method will be called</span>
+<span class="sd">            multiple times, on the same data or on other inputs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Yhat : np.ndarray</span>
+<span class="sd">            Prediction of observations. Returns feature vectors as columns stacked horizontally</span>
+<span class="sd">            in time. Take the transpose of this output to</span>
+<span class="sd">            obtain feature vectors as rows stacked vertically in time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method recursive_predict requires that input_dim = output_dim&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cold_start</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clear_state</span><span class="p">()</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_X</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+        <span class="n">Yhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">iterations</span><span class="p">))</span>
+        <span class="n">Ynext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># Maintain 2D shape</span>
+        <span class="n">Yhat</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ynext</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+            <span class="n">Xpresent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_X</span><span class="p">(</span><span class="n">Ynext</span><span class="p">)</span>
+            <span class="n">Ynext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">@</span> <span class="n">Xpresent</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:]</span>  <span class="c1"># Maintain 2D shape</span>
+            <span class="n">Yhat</span><span class="p">[:,</span> <span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ynext</span>
+        <span class="k">return</span> <span class="n">Yhat</span></div>
+
+<div class="viewcode-block" id="ESN.recursive_score"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.recursive_score">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">Y_true</span><span class="p">,</span> <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes loss in recursive one-step prediction, intended for validation set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        U : np.ndarray</span>
+<span class="sd">            Input data array, columns u(n) concatenated horizontally.</span>
+<span class="sd">            Dimensions - N_u x T</span>
+<span class="sd">        Y_true : np.ndarray</span>
+<span class="sd">            Target output array,  y(n) concatenated horizontally in time.</span>
+<span class="sd">            Dimensions - N_y x T</span>
+<span class="sd">        input_len : int</span>
+<span class="sd">            The input length to be fed to the ESN before recursive single-step prediction.</span>
+<span class="sd">        pred_len : int</span>
+<span class="sd">            The number of predictions desired.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        error : float</span>
+<span class="sd">            Normalized root mean square error (NRMSE). On the prediction. Each feature&#39;s</span>
+<span class="sd">            NRMSE is computed separately and averaged together at the end.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">input_len</span> <span class="o">+</span> <span class="n">pred_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method recursive_score requires that U has at least input_len + &quot;</span>
+                             <span class="s2">&quot;pred_len points in time. U only has </span><span class="si">{}</span><span class="s2"> time points&quot;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">Yhat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recursive_predict</span><span class="p">(</span><span class="n">U</span><span class="p">[:,</span> <span class="p">:</span><span class="n">input_len</span><span class="p">],</span> <span class="n">pred_len</span><span class="p">)</span>
+        <span class="n">num_features</span> <span class="o">=</span> <span class="n">Y_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">):</span>
+            <span class="n">strt</span> <span class="o">=</span> <span class="n">input_len</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">strt</span> <span class="o">+</span> <span class="n">pred_len</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">strt</span><span class="p">:</span><span class="n">end</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">error</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">strt</span><span class="p">:</span><span class="n">end</span><span class="p">],</span> <span class="n">Yhat</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+                             <span class="o">/</span> <span class="n">var</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">error</span><span class="o">/</span><span class="n">num_features</span></div>
 
 <div class="viewcode-block" id="ESN.score"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">Y_true</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -495,8 +762,11 @@
         <span class="n">num_features</span> <span class="o">=</span> <span class="n">Y_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">error</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">):</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="mf">1.</span>
             <span class="n">error</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Yhat</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
-                             <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">))</span>
+                             <span class="o">/</span> <span class="n">var</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">error</span><span class="o">/</span><span class="n">num_features</span></div>
 
 <div class="viewcode-block" id="ESN.score_with_X"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.score_with_X">[docs]</a>    <span class="k">def</span> <span class="nf">score_with_X</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y_true</span><span class="p">):</span>
@@ -506,7 +776,8 @@
 
 <span class="sd">        self.score(self._compute_X(U), Y_true)</span>
 
-<span class="sd">        if provided X corresponds to U.</span>
+<span class="sd">        provided X corresponds to U, and if starting from the same reservoir</span>
+<span class="sd">        initial state.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -529,8 +800,11 @@
         <span class="n">num_features</span> <span class="o">=</span> <span class="n">Y_true</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">error</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_features</span><span class="p">):</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="mf">1.</span>
             <span class="n">error</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">Y_true</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Yhat</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:])</span>
-                             <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">Y_true</span><span class="p">))</span>
+                             <span class="o">/</span> <span class="n">var</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">error</span><span class="o">/</span><span class="n">num_features</span></div></div>
 </pre></div>
 

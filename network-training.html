@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post21+g07942ac documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post29+g5b59ada documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post21+g07942ac
+                0.post29+g5b59ada
               </div>
             
           
@@ -207,6 +207,12 @@ network for the hidden layer</p></li>
 </dd>
 </dl>
 <dl class="method">
+<dt id="parallel_esn.esn.ESN.clear_state">
+<code class="descname">clear_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.clear_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.clear_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears X0, the reservoir’s memory of previous inputs and neural state</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="parallel_esn.esn.ESN.predict">
 <code class="descname">predict</code><span class="sig-paren">(</span><em>U</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predicts Yhat, output observations, given time series of inputs U</p>
@@ -216,7 +222,9 @@ network for the hidden layer</p></li>
 Dimensions - N_u x T</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>Yhat</strong> – Prediction of observations.</p>
+<dd class="field-even"><p><strong>Yhat</strong> – Prediction of observations. Returns feature vectors as columns stacked horizontally
+in time. Take the transpose of this output to
+obtain feature vectors as rows stacked vertically in time.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray</p>
@@ -228,7 +236,8 @@ Dimensions - N_u x T</p>
 <dt id="parallel_esn.esn.ESN.predict_with_X">
 <code class="descname">predict_with_X</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict_with_X" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predicts Yhat, output observations, given X already generated
-from input data U.</p>
+from input data U. Useful if X has already been computed and a prediction
+is desired without affecting the current state of the reservoir.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>X</strong> (<em>np.ndarray</em>) – X is [1;u(n);x(n)] concatenated horizontally (n is time), generated
@@ -242,6 +251,134 @@ Dimensions of (1+ N_u + N_x) x T</p>
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.recursive_predict">
+<code class="descname">recursive_predict</code><span class="sig-paren">(</span><em>U</em>, <em>iterations</em>, <em>cold_start=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts Yhat, output observations following the given time series of inputs U
+This method assumes that the network has been trained to produce one-step-forecasting,
+where the output y(t) corresponds to u(t+1), i.e. what the next input would have been.
+Currently this method only supports predicting all features provided as input; the
+dimensions of vector y(t) must match the dimensions of u(t).</p>
+<p>For the first step, observed values u(t) for t=0..T-1 are used to produce the first
+predicted value y(t) = hat{u}(t+1), which is then fed back to the network as an
+input in order to produce y(t+1). This recursion is continued for the specified
+number of iterations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>np.ndarray</em>) – Input data array, columns u(n) concatenated horizontally.
+Dimensions - N_u x T</p></li>
+<li><p><strong>iterations</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – How many future times to predict.</p></li>
+<li><p><strong>cold_start</strong> (<em>boolean</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to clear reservoir state before driving the reservoir with input data U.
+If the input data follows directly after training data, a warm start is sensible.
+However, if the provided data is temporally disconnected from the training data,
+a cold start could be useful for reproducibility if this method will be called
+multiple times, on the same data or on other inputs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Yhat</strong> – Prediction of observations. Returns feature vectors as columns stacked horizontally
+in time. Take the transpose of this output to
+obtain feature vectors as rows stacked vertically in time.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.recursive_score">
+<code class="descname">recursive_score</code><span class="sig-paren">(</span><em>U</em>, <em>Y_true</em>, <em>input_len</em>, <em>pred_len</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes loss in recursive one-step prediction, intended for validation set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>U</strong> (<em>np.ndarray</em>) – Input data array, columns u(n) concatenated horizontally.
+Dimensions - N_u x T</p></li>
+<li><p><strong>Y_true</strong> (<em>np.ndarray</em>) – Target output array,  y(n) concatenated horizontally in time.
+Dimensions - N_y x T</p></li>
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>error</strong> – Normalized root mean square error (NRMSE). On the prediction. Each feature’s
+NRMSE is computed separately and averaged together at the end.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.recursive_train_validate">
+<code class="descname">recursive_train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>input_len</em>, <em>pred_len</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_train_validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train on provided training data, and immediately validate
+and return validation loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainU</strong> (<em>array_like of np.ndarray</em>) – Batch of training input data arrays, columns u(n) concatenated horizontally.
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>trainY</strong> (<em>array_like of np.ndarray</em>) – Batch of training true output data arrays.
+Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>valU</strong> (<em>array_like of np.ndarray</em>) – Batch of validation input data arrays, columns u(n) concatenated horizontally.
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
+Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
+before initial transients in the reservoir have died out. The amount to discard
+depends on the memory of the network and typically ranges from 10s to 100s.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+for training. Negative value disables computing training loss.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence in validation set.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.recursive_validate">
+<code class="descname">recursive_validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>input_len</em>, <em>pred_len</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get loss on validation set for recursive one-step prediction. Uses recursive_score
+to compute the total error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchU</strong> (<em>array_like of np.ndarray</em>) – Batch of input data arrays, columns u(n) concatenated horizontally
+Dimensions - Batch_size x N_x x T_i</p></li>
+<li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – Batch of true output data arrays
+Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>loss</strong> – Returns the average of the NMSE losses computed on each sequence</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="parallel_esn.esn.ESN.reset">
+<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset output layer training and clear state</p>
 </dd></dl>
 
 <dl class="method">
@@ -273,7 +410,8 @@ computed separately and averaged together at the end.</p>
 <dd><p>Computes loss given input data X already processed with reservoir
 activations. Functions identically to running:</p>
 <p>self.score(self._compute_X(U), Y_true)</p>
-<p>if provided X corresponds to U.</p>
+<p>provided X corresponds to U, and if starting from the same reservoir
+initial state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -296,7 +434,7 @@ computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>clear_state=False</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trains on U’s and corresponding Y_true’s, batched in first index.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -305,11 +443,24 @@ computed separately and averaged together at the end.</p>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – batch of true output data arrays
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Whether to print status of training</p></li>
+<li><p><strong>clear_state</strong> (<em>boolean</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to clear the reservoir memory in between batches. If False, the training
+on the batches is equivalent to if the batches were all concatenated into a single
+time series.</p></li>
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of training, before initial
+transients in the reservoir have died out. The amount to discard depends on
+the memory of the network and typically ranges from 10s to 100s. If batches are
+to be treated as independent, with clear_state=True, warmups can typically be shorter
+since the zeroed reservoir initialization would be the normal operating mode of
+the ESN.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+for training. Negative value disables computing training loss.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>loss</strong> – Returns the loss computed on each sequence, array of length batchsize</p>
+<dd class="field-even"><p><strong>loss</strong> – Returns the loss computed on each sequence where loss was computed, array
+of length ((Batch_size-1) // compute_loss_freq) + 1. None returned if
+compute_loss_freq is less than equal to 0.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray</p>
@@ -319,7 +470,7 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train_validate">
-<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -333,7 +484,12 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em>) – Whether to print status of training</p></li>
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
+before initial transients in the reservoir have died out. The amount to discard
+depends on the memory of the network and typically ranges from 10s to 100s.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+for training. Negative value disables computing training loss.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -347,7 +503,7 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.validate">
-<code class="descname">validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>warmup=10</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -356,6 +512,10 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – Batch of true output data arrays
 Dimensions - Batch_size x N_y x T_i</p></li>
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each validation batch, before initial
+transients in the reservoir have died out. The amount to discard depends on
+the memory of the network and typically ranges from 10s to 100s.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
