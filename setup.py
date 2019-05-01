@@ -1,13 +1,14 @@
 from os import path
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 import sys
 import versioneer
+import numpy as np
 
 
 # NOTE: This file must remain Python 2 compatible for the foreseeable future,
 # to ensure that we error out properly for people with outdated setuptools
 # and/or pip.
-min_version = (3, 7)
+min_version = (3, 6)
 if sys.version_info < min_version:
     error = """
 parallel_esn does not support Python {0}.{1}.
@@ -44,6 +45,10 @@ setup(
     url='https://github.com/zblanks/parallel_esn',
     python_requires='>={}'.format('.'.join(str(n) for n in min_version)),
     packages=find_packages(exclude=['docs', 'tests']),
+    ext_modules=[Extension('train_esn',
+                           ['parallel_esn/train_esn.pyx'],
+                           include_dirs=[np.get_include()])],
+    setup_requires=['setuptools>=18.0', 'cython>=0.27'],
     entry_points={
         'console_scripts': [
             # 'some.module:some_function',

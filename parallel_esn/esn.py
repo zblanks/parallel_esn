@@ -1,9 +1,10 @@
+import warnings
 import numpy as np
 import networkx as nx
 from sklearn.metrics import mean_squared_error
 from .utils import create_rng, compute_spectral_radius
 from .progress import progress
-import warnings
+from .train_esn import compute_X
 
 
 class ESN:
@@ -37,7 +38,7 @@ class ESN:
 
     def __init__(self, input_dim, hidden_dim, output_dim, k,
                  spectral_radius=0.9, p=0.1, beta=1e-3, alpha=0.7,
-                 random_state=None, weight_distn='uniform'):
+                 random_state=None, weight_distn='uniform', use_cython=True):
         """
 
         Parameters
@@ -63,6 +64,8 @@ class ESN:
             Random state initializer
         weight_distn : {"uniform", "normal"}, optional
             Distribution of reservoir weights
+        use_cython : bool, optional
+            Whether to use the Cython compiled code when computing the X matrix
         """
 
         self.input_dim = input_dim
@@ -75,6 +78,7 @@ class ESN:
         self.alpha = alpha
         self.rng = create_rng(random_state)
         self.weight_distn = weight_distn
+        self.use_cython = use_cython
         self.W_out = None
         self.W = self._initialize_hidden_layer()
         self.W_in = self._initialize_input_layer()
@@ -115,7 +119,7 @@ class ESN:
                              'sparse')
 
         W *= self.spectral_radius / current_radius
-        return W.astype(np.float32)
+        return W.astype(np.float64)
 
     def _initialize_input_layer(self):
         """
@@ -157,23 +161,28 @@ class ESN:
             from input data U.
             Dimensions of (1+ N_u + N_x) x T
         """
-        T = U.shape[1]
-        Nu = self.input_dim
-        Nx = self.hidden_dim
-        X = np.ones((1 + Nu + Nx, T))
+        if self.use_cython:
+            X = compute_X(U.astype(np.float64), self.W_in, self.W, self.alpha,
+                          self.input_dim, self.hidden_dim, self.X0)
+        else:
+            T = U.shape[1]
+            Nu = self.input_dim
+            Nx = self.hidden_dim
+            X = np.ones((1 + Nu + Nx, T))
 
-        # Do first step. It computes the first column of X based off of
-        # the existing reservoir state X0, which is just zero if the reservoir
-        # is not warmed up, or the state from the last training/prediction if
-        # it is.
-        X[1:Nu+1, 0] = U[:, 0]
-        xti = np.tanh(self.W_in @ X[:Nu+1, 0] + self.W @ self.X0[Nu+1:])
-        X[Nu+1:, 0] = (1.-self.alpha)*self.X0[Nu+1:] + self.alpha * xti
+            # Do first step. It computes the first column of X based off of
+            # the existing reservoir state X0, which is just zero if the reservoir
+            # is not warmed up, or the state from the last training/prediction if
+            # it is.
+            X[1:Nu+1, 0] = U[:, 0]
+            xti = np.tanh(self.W_in @ X[:Nu+1, 0] + self.W @ self.X0[Nu+1:])
+            X[Nu+1:, 0] = (1.-self.alpha)*self.X0[Nu+1:] + self.alpha * xti
 
-        for n in range(1, T):
-            X[1:Nu+1, n] = U[:, n]
-            xti = np.tanh(self.W_in @ X[:Nu+1, n] + self.W @ X[Nu+1:, n-1])
-            X[Nu+1:, n] = (1.-self.alpha)*X[Nu+1:, n-1] + self.alpha*xti
+            for n in range(1, T):
+                X[1:Nu+1, n] = U[:, n]
+                xti = np.tanh(self.W_in @ X[:Nu+1, n] + self.W @ X[Nu+1:, n-1])
+                X[Nu+1:, n] = (1.-self.alpha)*X[Nu+1:, n-1] + self.alpha*xti
+
         # Save final reservoir state
         self.X0 = X[:, -1]
         return X
