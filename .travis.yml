@@ -9,7 +9,7 @@ cache:
 
 install:
   # Install this package and the packages listed in requirements.txt.
-  - pip install .
+  - pip install -e .
   # Install extra requirements for running tests and building docs.
   - pip install -r requirements-dev.txt
 
