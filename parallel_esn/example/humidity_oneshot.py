@@ -73,8 +73,7 @@ def main():
         hum_in = unscale_data(testU[wi[k], 1:2, :].T, mu, sigma, predict_cols=[1])
         ax[k].plot(time, hum_in[:, 0], 'ob', label='input')
     for i in range(args.num_iter):
-        H_space = bo.build_options()
-        h_star = bo.find_best_choice(H_space)
+        h_star = bo.find_best_choices()
         print("Iteration {}".format(i))
         print(h_star)
 

@@ -2,3 +2,4 @@ numpy
 networkx
 scikit-learn
 Cython
+mpi4py

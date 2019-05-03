@@ -95,8 +95,7 @@ def main():
         ax_t[k].plot(time[:in_len], dat_in[:, 0], 'ob', label='input')
         ax_h[k].plot(time[:in_len], dat_in[:, 1], 'ob', label='input')
     for i in range(args.num_iter):
-        H_space = bo.build_options()
-        h_star = bo.find_best_choice(H_space)
+        h_star = bo.find_best_choices()
         print("Iteration {}".format(i))
         print(h_star)
 

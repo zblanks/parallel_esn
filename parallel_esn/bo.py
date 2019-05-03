@@ -116,7 +116,7 @@ class BO:
         param_vals = np.power(10, samples)
         return param_vals
 
-    def build_options(self, num_samples=1000):
+    def _build_options(self, num_samples=1000):
         """
         Builds matrix which defines possible options for this iteration
 
@@ -157,14 +157,16 @@ class BO:
                                   beta_vals], axis=1)
         return H_space
 
-    def find_best_choice(self, H_space):
+    def find_best_choices(self, num_samples=1000, num_choices=1):
         """
         Finds the best hyper-parameter combination
 
         Parameters
         ----------
-        H_space : np.ndarray
-            Matrix of hyper-parameter options
+        num_samples : int, optional
+            Number of hyper-parameter samples to generate
+        num_choices : int, optional
+            Number of choices to select
 
         Returns
         -------
@@ -172,13 +174,24 @@ class BO:
             Best hyper-parameter values for the current Gaussian process
 
         """
-
+        H_space = self._build_options(num_samples)
         y_pred = self.gpr.sample_y(H_space, random_state=self.rng)
-        best_choice = y_pred.argmax(axis=0)
+        choices = np.argsort(y_pred)[0:num_choices]
         hyper_parameters = ['k', 'hidden_dim', 'spectral_radius', 'p', 'alpha',
                             'beta']
-        best_vals = H_space[best_choice].flatten()
-        param_vals = dict(zip(hyper_parameters, best_vals))
-        param_vals['k'] = int(param_vals['k'])
-        param_vals['hidden_dim'] = int(param_vals['hidden_dim'])
+        best_vals = H_space[choices, :]
+
+        param_vals = {}
+        for (i, val) in enumerate(hyper_parameters):
+            if num_choices == 1:
+                param_vals[val] = best_vals[0, i]
+
+                if (val == 'k') or (val == 'hidden_dim'):
+                    param_vals[val] = int(param_vals[val])
+            else:
+                param_vals[val] = best_vals[:, i]
+
+                if (val == 'k') or (val == 'hidden_dim'):
+                    param_vals[val] = param_vals[val].astype(int)
+
         return param_vals

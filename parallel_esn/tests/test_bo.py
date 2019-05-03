@@ -25,7 +25,7 @@ def test_build_options():
     # Check that the matrix has 6 columns for the hyper-parameters and
     # has the corresponding number of samples
     bo = BO(k=(2, 10))
-    H_space = bo.build_options(num_samples=100)
+    H_space = bo._build_options(num_samples=100)
     assert H_space.shape == (100, 6)
 
 
@@ -33,6 +33,5 @@ def test_find_best_choice():
     # Check returned value is a dictionary with six values for the
     # hyper-parameters
     bo = BO(k=(2, 10))
-    H_space = bo.build_options(num_samples=100)
-    param_vals = bo.find_best_choice(H_space)
+    param_vals = bo.find_best_choices()
     assert len(param_vals) == 6

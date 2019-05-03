@@ -36,8 +36,7 @@ def main():
     bo = BO(k=(2, 15), hidden_dim=(100, 200), random_state=17)
 
     for i in range(args.num_iter):
-        H_space = bo.build_options()
-        h_star = bo.find_best_choice(H_space)
+        h_star = bo.find_best_choices()
         print("Iteration {}".format(i))
         print(h_star)
 
