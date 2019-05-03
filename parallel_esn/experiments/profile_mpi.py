@@ -50,7 +50,7 @@ def main():
             params = dict(zip(init_params.keys(), vals))
             comm.send(params, dest=i)
 
-        for _ in range(args.num_iter):
+        for i in range(args.num_iter):
             # We assume res_info is a dictionary {'params': {'': ..., }, '
             # 'error': ..., 'source': ...} where source is the worker that
             # sent the message
@@ -59,8 +59,9 @@ def main():
             params = res_info['params']
             bo.update_gpr(X=[params[val] for val in params.keys()], y=val_error)
 
-            params = bo.find_best_choices()
-            comm.send(params, dest=res_info['source'])
+            if i < args.num_iter - 1:
+                params = bo.find_best_choices()
+                comm.send(params, dest=res_info['source'])
 
         # The search process has completed and we will terminate MPI process
         for i in range(1, comm.size):

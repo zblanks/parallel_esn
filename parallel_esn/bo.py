@@ -175,16 +175,25 @@ class BO:
 
         """
         H_space = self._build_options(num_samples)
-        y_pred = self.gpr.sample_y(H_space, random_state=self.rng)
-        choices = np.argsort(y_pred)[0:num_choices]
+
+        # For the first MPI iteration because there is no prior, randomly
+        # sample num_choices points
+        if num_choices > 1:
+            idx = self.rng.choice(np.arange(num_samples), size=num_choices,
+                                  replace=False)
+            best_vals = H_space[idx, :]
+        else:
+            y_pred = self.gpr.sample_y(H_space, random_state=self.rng)
+            choices = np.argmin(y_pred)
+            best_vals = H_space[choices, :]
+
         hyper_parameters = ['k', 'hidden_dim', 'spectral_radius', 'p', 'alpha',
                             'beta']
-        best_vals = H_space[choices, :]
 
         param_vals = {}
         for (i, val) in enumerate(hyper_parameters):
             if num_choices == 1:
-                param_vals[val] = best_vals[0, i]
+                param_vals[val] = best_vals[i]
 
                 if (val == 'k') or (val == 'hidden_dim'):
                     param_vals[val] = int(param_vals[val])
