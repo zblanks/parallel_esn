@@ -84,6 +84,28 @@ def test_score_with_X(generate_data_network):
         np.testing.assert_allclose(score_from_U, score_from_X)
 
 
+def test_cython_equivalence():
+    # This is to test if the cython _compute_X behaves the same
+    # way as the numpy version.
+    # Create a training set of sinusoidal data
+    t = np.linspace(0, 10, 101)
+    data = np.sin(2*np.pi*t)
+    # Create a validation the same way, with a phase shift
+    val_t = np.linspace(0, 3, 31)
+    val_data = np.sin(2*np.pi*val_t + np.sqrt(2))
+    hidden = 10
+    trainU, trainY = chunk_data(data, hidden, 4)
+    valU, valY = chunk_data(val_data, hidden, 4)
+
+    esn = ESN(1, hidden, 1, 3)
+    # Cython losses
+    losses_cy = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1, warmup=0)
+    esn.reset()
+    esn.use_cython = False
+    losses_np = esn.train(trainU, trainY, verbose=0, compute_loss_freq=1, warmup=0)
+    np.testing.assert_allclose(losses_cy, losses_np)
+
+
 @pytest.fixture(scope="module", autouse=True)
 def generate_recursive_network():
     # Create data for the following tests. Only runs
