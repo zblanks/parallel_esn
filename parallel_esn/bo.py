@@ -204,3 +204,10 @@ class BO:
                     param_vals[val] = param_vals[val].astype(int)
 
         return param_vals
+
+    def return_best_parameters(self):
+        min_error = min(self.y)
+        index = self.y.index(min_error)
+        print("Minimum Validation Error = ", min_error)
+        print("Best parameters found = ", self.H[index])
+        return min_error, self.H[index]
