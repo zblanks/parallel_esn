@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from ..esn import ESN
 from ..utils import to_forecast_form, standardize_traindata, scale_data, unscale_data
 from ..bo import BO
@@ -8,6 +9,8 @@ from ..bo import BO
 """
 Attempts to predict temperature, humidity, and pressure for 5 west coast cities,
 Vancouver, Seattle, Portland, San Francisco, and Los Angeles.
+
+Sequential version of the code.
 """
 
 
@@ -60,7 +63,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_iter', type=int, nargs='?', default=1)
     parser.add_argument('--filename', type=str, nargs='?', default='west_coast_weather.csv')
+    parser.add_argument('--verbose', type=int, nargs='?', default=0)
     args = parser.parse_args()
+
+    # Get the start time for the run
+    start_time = time.time()
 
     in_len = 100
     pred_len = 24
@@ -75,7 +82,7 @@ def main():
     best_loss = 1e8
     best_esn = None
 
-    time = np.arange(in_len+pred_len+1)
+    time_arr = np.arange(in_len+pred_len+1)
 
     # To choose which runs to look at at random
     if testU.shape[0] >= 9:
@@ -83,18 +90,6 @@ def main():
     else:
         replace = True
     wi = np.random.choice(testU.shape[0], 9, replace=replace)
-
-    # Humidity Figure
-    fig_h, ax_h = plt.subplots(3, 3, figsize=(15, 14))
-    ax_h = ax_h.flatten()
-
-    # Temperature Figure
-    fig_t, ax_t = plt.subplots(3, 3, figsize=(15, 14))
-    ax_t = ax_t.flatten()
-    for k in range(len(wi)):
-        dat_in = unscale_data(testU[wi[k], :, :in_len].T, mu, sigma)
-        ax_t[k].plot(time[:in_len], dat_in[:, 3], 'ob', label='input')
-        ax_h[k].plot(time[:in_len], dat_in[:, 9], 'ob', label='input')
 
     for i in range(args.num_iter):
         H_space = bo.build_options()
@@ -108,40 +103,67 @@ def main():
                   p=h_star['p'], alpha=h_star['alpha'], beta=h_star['beta'])
 
         val_loss = esn.recursive_train_validate(trainU, trainY, valU, valY,
-                                                in_len, pred_len, verbose=1, compute_loss_freq=10)
+                                                in_len, pred_len, verbose=args.verbose,
+                                                compute_loss_freq=10)
         print("validation loss = {}".format(val_loss))
 
-        for k in range(len(wi)):
-            s_pred = esn.recursive_predict(testU[wi[k], :, :in_len], pred_len)
-            dat_pred = unscale_data(s_pred.T, mu, sigma)
-            ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 3], '-', color='#888888', alpha=0.1)
-            ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 9], '-', color='#888888', alpha=0.1)
         if val_loss < best_loss:
             best_esn = esn
             best_loss = val_loss
 
         bo.update_gpr(X=[h_star[val] for val in h_star.keys()], y=val_loss)
+
+    # Get the end time for the run
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print("Sequential: Elapsed time = {} sec".format(elapsed_time))
+
+    # Humidity Figure
+    fig_h, ax_h = plt.subplots(3, 3, figsize=(15, 14))
+    ax_h = ax_h.flatten()
+
+    # Temperature Figure
+    fig_t, ax_t = plt.subplots(3, 3, figsize=(15, 14))
+    ax_t = ax_t.flatten()
+
+    # Pressure Figure
+    fig_p, ax_p = plt.subplots(3, 3, figsize=(15, 14))
+    ax_p = ax_p.flatten()
+
+    for k in range(len(wi)):
+        dat_in = unscale_data(testU[wi[k], :, :in_len].T, mu, sigma)
+        ax_t[k].plot(time_arr[:in_len], dat_in[:, 3], 'ob', label='input')
+        ax_h[k].plot(time_arr[:in_len], dat_in[:, 8], 'ob', label='input')
+        ax_p[k].plot(time_arr[:in_len], dat_in[:, 13], 'ob', label='input')
     for k in range(len(wi)):
         dat_obs = unscale_data(testU[wi[k], :, in_len:in_len+pred_len].T, mu, sigma)
-        ax_t[k].plot(time[in_len:in_len+pred_len], dat_obs[:, 3], '^g', label='observed')
-        ax_h[k].plot(time[in_len:in_len+pred_len], dat_obs[:, 9], '^g', label='observed')
+        ax_t[k].plot(time_arr[in_len:in_len+pred_len], dat_obs[:, 3], '^g', label='observed')
+        ax_h[k].plot(time_arr[in_len:in_len+pred_len], dat_obs[:, 8], '^g', label='observed')
+        ax_p[k].plot(time_arr[in_len:in_len+pred_len], dat_obs[:, 13], '^g', label='observed')
         s_pred = best_esn.recursive_predict(testU[wi[k], :, :in_len], pred_len)
         dat_pred = unscale_data(s_pred.T, mu, sigma)
-        ax_t[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 3], '-r', label="Best ESN")
-        ax_h[k].plot(time[in_len:in_len+pred_len], dat_pred[:, 9], '-r', label="Best ESN")
+        ax_t[k].plot(time_arr[in_len:in_len+pred_len], dat_pred[:, 3], '-r', label="Best ESN")
+        ax_h[k].plot(time_arr[in_len:in_len+pred_len], dat_pred[:, 8], '-r', label="Best ESN")
+        ax_p[k].plot(time_arr[in_len:in_len+pred_len], dat_pred[:, 13], '-r', label="Best ESN")
     plt.figure(fig_t.number)
     plt.suptitle("SF Temperature")
     plt.figure(fig_h.number)
     plt.suptitle("SF Humidity")
+    plt.figure(fig_p.number)
+    plt.suptitle("SF Pressure")
     for i in range(len(ax_h)):
-        ax_t[i].set_xlim(time[in_len - 2*pred_len], time[in_len + pred_len])
-        ax_h[i].set_xlim(time[in_len - 2*pred_len], time[in_len + pred_len])
+        ax_t[i].set_xlim(time_arr[in_len - 2*pred_len], time_arr[in_len + pred_len])
+        ax_h[i].set_xlim(time_arr[in_len - 2*pred_len], time_arr[in_len + pred_len])
+        ax_p[i].set_xlim(time_arr[in_len - 2*pred_len], time_arr[in_len + pred_len])
     for idx in [0, 3, 6]:
         ax_t[idx].set_ylabel("Temperature (Kelvin)")
         ax_h[idx].set_ylabel("Humidity (percent)")
+        ax_p[idx].set_ylabel("Pressure (mb)")
     for idx in [6, 7, 8]:
         ax_t[idx].set_xlabel("Hours")
         ax_h[idx].set_xlabel("Hours")
+        ax_p[idx].set_xlabel("Hours")
     ax_h[0].legend(loc=2, numpoints=1)
     plt.show()
 
