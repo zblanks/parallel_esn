@@ -7,6 +7,13 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.ccache  # https://github.com/travis-ci/travis-ci/issues/5853
 
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libopenmpi-dev
+
 install:
   # Install this package and the packages listed in requirements.txt.
   - pip install -e .
