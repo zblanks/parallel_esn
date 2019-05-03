@@ -570,13 +570,13 @@ class ESN:
         Returns
         -------
         error : float
-            Normalized root mean square error (NRMSE). On the prediction. Each feature's
-            NRMSE is computed separately and averaged together at the end.
+            Normalized mean square error (NMSE). On the prediction. Each feature's
+            NMSE is computed separately and averaged together at the end.
 
         """
         if U.shape[1] < input_len + pred_len:
             raise ValueError("Method recursive_score requires that U has at least input_len + "
-                             "pred_len points in time. U only has {} time points"
+                             "pred_len + 1 points in time. U only has {} time points"
                              .format(U.shape[1]))
         Yhat = self.recursive_predict(U[:, :input_len], pred_len)
         num_features = Y_true.shape[0]
@@ -587,8 +587,7 @@ class ESN:
             var = np.var(Y_true[j, strt:end])
             if var == 0.:
                 var = 1.
-            error += np.sqrt(mean_squared_error(Y_true[j, strt:end], Yhat[j, :])
-                             / var)
+            error += mean_squared_error(Y_true[j, strt:end], Yhat[j, :]) / var
         return error/num_features
 
     def score(self, U, Y_true):
@@ -607,7 +606,7 @@ class ESN:
         Returns
         -------
         error : float
-            Normalized root mean square error (NRMSE). Each feature's NRMSE is
+            Normalized mean square error (NMSE). Each feature's NMSE is
             computed separately and averaged together at the end.
 
         """
@@ -618,8 +617,7 @@ class ESN:
             var = np.var(Y_true[j, :])
             if var == 0.:
                 var = 1.
-            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
-                             / var)
+            error += mean_squared_error(Y_true[j, :], Yhat[j, :]) / var
         return error/num_features
 
     def score_with_X(self, X, Y_true):
@@ -645,7 +643,7 @@ class ESN:
         Returns
         -------
         error : float
-            Normalized mean square error (NRMSE). Each feature's NRMSE is
+            Normalized mean square error (NMSE). Each feature's NRMSE is
             computed separately and averaged together at the end.
 
         """
@@ -656,6 +654,5 @@ class ESN:
             var = np.var(Y_true[j, :])
             if var == 0.:
                 var = 1.
-            error += np.sqrt(mean_squared_error(Y_true[j, :], Yhat[j, :])
-                             / var)
+            error += mean_squared_error(Y_true[j, :], Yhat[j, :]) / var
         return error/num_features

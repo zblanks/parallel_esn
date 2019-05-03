@@ -7,7 +7,7 @@ cimport cython
 @cython.wraparound(False)
 cpdef compute_X(np.ndarray[np.float64_t, ndim=2] U,
                 np.ndarray[np.float64_t, ndim=2] W_in,
-                np.ndarray[np.float64_t, ndim=2] W, float alpha, int input_dim,
+                np.ndarray[np.float64_t, ndim=2] W, double alpha, int input_dim,
                 int hidden_dim, np.ndarray[np.float64_t, ndim = 1] X0):
 
     cdef:
@@ -23,7 +23,7 @@ cpdef compute_X(np.ndarray[np.float64_t, ndim=2] U,
         int n
 
     # Do the first step
-    X[1:(Nu + 1), 0] = U[:, 0]
+    X[1:(Nu + 1), 0] =  U[:, 0]
     xti = np.tanh(W_in @ X[:(Nu + 1), 0] + W @ X0[(Nu + 1):])
     X[(Nu + 1):, 0] = (1.-alpha)*X0[Nu+1:] + (alpha * xti)
 

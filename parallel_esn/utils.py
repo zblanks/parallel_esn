@@ -49,7 +49,7 @@ def create_rng(random_state):
                         "np.random.RandomState")
 
 
-def to_forecast_form(timeseries, batch_size=-1):
+def to_forecast_form(timeseries, batch_size=-1, stride=-1):
     """
     Converts timeseries data into input and target batches that can be
     used for training an ESN to perform single-step-forecasting.
@@ -80,6 +80,11 @@ def to_forecast_form(timeseries, batch_size=-1):
         The number of data points in time to be included in each batch.
         If it is negative, the data will be returned as a single batch
         without remainder.
+    stride : int, default=-1
+        How much to shift the window every batch. By default (if stride option
+        is <= 0), the stride is set to be equal to the batch_size so no
+        data is redundant. Redundancy can be useful for the recursive_validate
+        method when the goal is to optimize recursive one-step forecasting.
 
     Returns
     -------
@@ -109,27 +114,37 @@ def to_forecast_form(timeseries, batch_size=-1):
         # promote to 2D array
         timeseries = timeseries.reshape(-1, 1)
 
+    if stride <= 0:
+        stride = batch_size
     # How many time slices are in the timeseries
     length = timeseries.shape[0]
     # Get transposed view for later array assignment convenience
     timeseriesT = timeseries.T
     if length - 1 < batch_size or batch_size <= 0:
         batch_size = length - 1
-    num_batch = (length - 1)//batch_size
-    remainder_size = (length - 1) - num_batch * batch_size
+    num_batch = (length - (1 + batch_size))//stride + 1
+    if stride != batch_size:
+        # Then we will just ignore the final remainder,
+        # since usually with a specified stride this data
+        # is destined to be validation data.
+        remainder_size = 0
+    else:
+        remainder_size = (length - 1) - num_batch * batch_size
     batchU = np.zeros((num_batch, feature_len, batch_size))
     batchY = np.zeros((num_batch, feature_len, batch_size))
     remainderU = np.zeros((1, feature_len, remainder_size))
     remainderY = np.zeros((1, feature_len, remainder_size))
     for i in range(num_batch):
-        start = batch_size*i
+        start = stride*i
         end = start + batch_size
         batchU[i, :, :] = timeseriesT[:, start:end]
-        start = batch_size*i + 1
+        start = stride*i + 1
         end = start + batch_size
         batchY[i, :, :] = timeseriesT[:, start:end]
-    remainderU[0, :, :] = timeseriesT[:, batch_size*num_batch:-1]
-    remainderY[0, :, :] = timeseriesT[:, batch_size*num_batch+1:]
+    if stride == batch_size:
+        # Don't do this if the stride is not the same as the batch_size
+        remainderU[0, :, :] = timeseriesT[:, batch_size*num_batch:-1]
+        remainderY[0, :, :] = timeseriesT[:, batch_size*num_batch+1:]
     return batchU, batchY, remainderU, remainderY
 
 
