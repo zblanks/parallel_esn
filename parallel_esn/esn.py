@@ -576,7 +576,7 @@ class ESN:
         """
         if U.shape[1] < input_len + pred_len:
             raise ValueError("Method recursive_score requires that U has at least input_len + "
-                             "pred_len points in time. U only has {} time points"
+                             "pred_len + 1 points in time. U only has {} time points"
                              .format(U.shape[1]))
         Yhat = self.recursive_predict(U[:, :input_len], pred_len)
         num_features = Y_true.shape[0]
