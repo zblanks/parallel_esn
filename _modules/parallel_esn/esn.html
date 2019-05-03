@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post29+g5b59ada documentation</title>
+  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post36+g224e643 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.post29+g5b59ada
+                0.post36+g224e643
               </div>
             
           
@@ -154,12 +154,13 @@
            <div itemprop="articleBody">
             
   <h1>Source code for parallel_esn.esn</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="k">import</span> <span class="n">mean_squared_error</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">create_rng</span><span class="p">,</span> <span class="n">compute_spectral_radius</span>
 <span class="kn">from</span> <span class="nn">.progress</span> <span class="k">import</span> <span class="n">progress</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">.train_esn</span> <span class="k">import</span> <span class="n">compute_X</span>
 
 
 <div class="viewcode-block" id="ESN"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN">[docs]</a><span class="k">class</span> <span class="nc">ESN</span><span class="p">:</span>
@@ -193,7 +194,7 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
                  <span class="n">spectral_radius</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-                 <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_distn</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">):</span>
+                 <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_distn</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="n">use_cython</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -219,6 +220,8 @@
 <span class="sd">            Random state initializer</span>
 <span class="sd">        weight_distn : {&quot;uniform&quot;, &quot;normal&quot;}, optional</span>
 <span class="sd">            Distribution of reservoir weights</span>
+<span class="sd">        use_cython : bool, optional</span>
+<span class="sd">            Whether to use the Cython compiled code when computing the X matrix</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">input_dim</span>
@@ -231,6 +234,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">create_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_distn</span> <span class="o">=</span> <span class="n">weight_distn</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cython</span> <span class="o">=</span> <span class="n">use_cython</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_hidden_layer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_input_layer</span><span class="p">()</span>
@@ -271,7 +275,7 @@
                              <span class="s1">&#39;sparse&#39;</span><span class="p">)</span>
 
         <span class="n">W</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_radius</span> <span class="o">/</span> <span class="n">current_radius</span>
-        <span class="k">return</span> <span class="n">W</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">W</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_initialize_input_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -313,23 +317,28 @@
 <span class="sd">            from input data U.</span>
 <span class="sd">            Dimensions of (1+ N_u + N_x) x T</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">Nu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span>
-        <span class="n">Nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">Nu</span> <span class="o">+</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cython</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">compute_X</span><span class="p">(</span><span class="n">U</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_in</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">U</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">Nu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span>
+            <span class="n">Nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">Nu</span> <span class="o">+</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">T</span><span class="p">))</span>
 
-        <span class="c1"># Do first step. It computes the first column of X based off of</span>
-        <span class="c1"># the existing reservoir state X0, which is just zero if the reservoir</span>
-        <span class="c1"># is not warmed up, or the state from the last training/prediction if</span>
-        <span class="c1"># it is.</span>
-        <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
-        <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">xti</span>
+            <span class="c1"># Do first step. It computes the first column of X based off of</span>
+            <span class="c1"># the existing reservoir state X0, which is just zero if the reservoir</span>
+            <span class="c1"># is not warmed up, or the state from the last training/prediction if</span>
+            <span class="c1"># it is.</span>
+            <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">X0</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">xti</span>
 
-        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-            <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="n">n</span><span class="p">]</span>
-            <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="o">*</span><span class="n">xti</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+                <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">U</span><span class="p">[:,</span> <span class="n">n</span><span class="p">]</span>
+                <span class="n">xti</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">@</span> <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="n">X</span><span class="p">[</span><span class="n">Nu</span><span class="o">+</span><span class="mi">1</span><span class="p">:,</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="o">*</span><span class="n">xti</span>
+
         <span class="c1"># Save final reservoir state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">X0</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">X</span>
