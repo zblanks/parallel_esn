@@ -124,7 +124,7 @@ def make_figures(testU, best_esn, mu, sigma, in_len, pred_len, outdir):
         ax_h[0].legend(loc=2, numpoints=1)
         ax_p[0].legend(loc=2, numpoints=1)
 
-        cityfile = outdir.rstrip('/') + '/' + city[ii].replace(' ','')
+        cityfile = outdir.rstrip('/') + '/' + city[ii].replace(' ', '')
         print("Saving: " + cityfile)
         plt.figure(fig_t.number)
         plt.savefig(cityfile + "_temp.pdf", bbox_inches='tight')
@@ -152,7 +152,6 @@ def main():
     )
 
     comm = MPI.COMM_WORLD
-
 
     # mpi4py requires that we define empty placeholders for the items we will
     # pass as messages throughout the program
