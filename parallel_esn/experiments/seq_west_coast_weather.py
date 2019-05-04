@@ -92,8 +92,7 @@ def main():
     wi = np.random.choice(testU.shape[0], 9, replace=replace)
 
     for i in range(args.num_iter):
-        H_space = bo.build_options()
-        h_star = bo.find_best_choice(H_space)
+        h_star = bo.find_best_choices()
         print("Iteration {}".format(i))
         print(h_star)
 
