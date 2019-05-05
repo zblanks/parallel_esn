@@ -173,6 +173,8 @@ def main():
             comm.send(params, dest=i)
 
         for i in range(args.num_iter):
+            print('Iteration: {}'.format(i), flush=True)
+
             # We assume res_info is a dictionary {'params': {'': ..., }, '
             # 'error': ..., 'source': ...} where source is the worker that
             # sent the message
