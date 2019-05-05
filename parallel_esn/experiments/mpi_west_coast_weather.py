@@ -168,7 +168,10 @@ def main():
         bo = BO(k=(2, 100), hidden_dim=(400, 800), random_state=12)
         init_params = bo.find_best_choices(num_choices=comm.size-1)
         for i in range(1, comm.size):
-            vals = [init_params[key][i-1] for key in init_params.keys()]
+            if comm.size - 1 == 1:
+                vals = [init_params[key] for key in init_params.keys()]
+            else:
+                vals = [init_params[key][i-1] for key in init_params.keys()]
             params = dict(zip(init_params.keys(), vals))
             comm.send(params, dest=i)
 
