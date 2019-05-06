@@ -3,3 +3,4 @@ networkx
 scikit-learn
 Cython
 mpi4py
+matplotlib
