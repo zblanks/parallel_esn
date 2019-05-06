@@ -1,3 +1,5 @@
 [flake8]
 max-line-length=115
 exclude = .git,__pycache__,build,dist,versioneer.py,parallel_esn/_version.py,docs/source/conf.py,.eggs,*.egg,build
+per-file-ignores =
+    parallel_esn/experiments/mpi_west_coast_weather.py: E402

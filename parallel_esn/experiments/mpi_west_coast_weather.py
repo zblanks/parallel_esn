@@ -5,7 +5,21 @@ Vancouver, Seattle, Portland, San Francisco, and Los Angeles.
 Hybrid-parallel version of the code with MPI leader-worker search construct
 and OMP with training the models
 """
+import os
 import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--num_threads', type=str, nargs='?', default=4)
+parser.add_argument('--num_iter', type=int, nargs='?', default=1)
+parser.add_argument('--filename', type=str, nargs='?',
+                    default='west_coast_weather.csv')
+parser.add_argument('--verbose', type=int, nargs='?', default=0)
+parser.add_argument('--outdir', type=str, nargs='?', default='figs')
+args = parser.parse_args()
+
+# Control the number of threads used by OMP for matrix multiplication
+os.environ['OMP_NUM_THREADS'] = args.num_threads
+
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -136,19 +150,12 @@ def make_figures(testU, best_esn, mu, sigma, in_len, pred_len, outdir):
         plt.close('all')
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--num_iter', type=int, nargs='?', default=1)
-    parser.add_argument('--filename', type=str, nargs='?',
-                        default='west_coast_weather.csv')
-    parser.add_argument('--verbose', type=int, nargs='?', default=0)
-    parser.add_argument('--outdir', type=str, nargs='?', default='figs')
-    args = parser.parse_args()
+def main(cmdline_args):
 
     in_len = 100
     pred_len = 24
     trainU, trainY, valU, valY, testU, testY, mu, sigma = prep_data(
-        args.filename, in_len, pred_len
+        cmdline_args.filename, in_len, pred_len
     )
 
     comm = MPI.COMM_WORLD
@@ -175,7 +182,7 @@ def main():
             params = dict(zip(init_params.keys(), vals))
             comm.send(params, dest=i)
 
-        for i in range(args.num_iter):
+        for i in range(cmdline_args.num_iter):
             print('Iteration: {}'.format(i), flush=True)
 
             # We assume res_info is a dictionary {'params': {'': ..., }, '
@@ -186,7 +193,7 @@ def main():
             params = res_info['params']
             bo.update_gpr(X=[params[val] for val in params.keys()], y=val_error)
 
-            if i < args.num_iter - 1:
+            if i < cmdline_args.num_iter - 1:
                 params = bo.find_best_choices()
                 comm.send(params, dest=res_info['source'])
 
@@ -212,14 +219,16 @@ def main():
                        p=best_params['p'], alpha=best_params['alpha'],
                        beta=best_params['beta'])
 
-        best_esn.train(trainU, trainY, verbose=args.verbose, compute_loss_freq=100)
+        best_esn.train(trainU, trainY, verbose=cmdline_args.verbose,
+                       compute_loss_freq=100)
         # Compute test error
         test_loss = best_esn.recursive_validate(testU, testY, in_len, pred_len,
-                                                verbose=args.verbose)
+                                                verbose=cmdline_args.verbose)
 
         print("test loss = {}".format(test_loss))
 
-        make_figures(testU, best_esn, mu, sigma, in_len, pred_len, args.outdir)
+        make_figures(testU, best_esn, mu, sigma, in_len, pred_len,
+                     cmdline_args.outdir)
 
     else:
         while True:
@@ -239,7 +248,7 @@ def main():
 
             val_loss = esn.recursive_train_validate(trainU, trainY, valU, valY,
                                                     in_len, pred_len,
-                                                    verbose=args.verbose,
+                                                    verbose=cmdline_args.verbose,
                                                     compute_loss_freq=100)
 
             res_info = {'params': params, 'error': val_loss, 'source': comm.rank}
@@ -247,4 +256,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(args)
