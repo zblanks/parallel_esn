@@ -7,7 +7,7 @@ from .utils import create_rng
 
 class BO:
     """
-    Sequential Bayesian Optimization framework
+    Bayesian Optimization framework
     """
 
     def __init__(self, k, hidden_dim=(100, 10000),
@@ -75,7 +75,7 @@ class BO:
         X : list
             Hyper-parameter values that were tried
         y : float
-            Error that resulted from using H on the true function
+            Error that resulted from using X on the true function
 
         Returns
         -------

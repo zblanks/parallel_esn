@@ -10,6 +10,5 @@ Parallel Echo State Network Documentation
    :maxdepth: 2
 
    installation
-   usage
    network-training
-   release-history
+   bo
