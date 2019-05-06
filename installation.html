@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; Parallel Echo State Network 0.post50+g99f6139 documentation</title>
+  <title>Installation &mdash; Parallel Echo State Network 0.post52+gb8ae121 documentation</title>
   
 
   
@@ -39,7 +39,7 @@
   <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Usage" href="usage.html" />
+    <link rel="next" title="Echo State Network Training" href="network-training.html" />
     <link rel="prev" title="Parallel Echo State Network Documentation" href="index.html" /> 
 </head>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post50+g99f6139
+                0.post52+gb8ae121
               </div>
             
           
@@ -90,9 +90,8 @@
             
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="network-training.html">Echo State Network Training</a></li>
-<li class="toctree-l1"><a class="reference internal" href="release-history.html">Release History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bo.html">Bayesian Optimization</a></li>
 </ul>
 
             
@@ -159,10 +158,46 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>At the command line:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install parallel_esn
+<p>To install the code, we assume the user is working in a UNIX-enabled
+environment. All code was tested an Ubuntu 16.04 operating system.
+To download the package please take the following steps in the UNIX environment
+in the order described:</p>
+<ol class="arabic">
+<li><p>sudo apt-get update</p></li>
+<li><p>sudo apt-get install gcc</p></li>
+<li><p>sudo apt-get install libcr-dev mpich mpich-doc</p></li>
+<li><p>wget <a class="reference external" href="https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh">https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh</a></p></li>
+<li><p>bash Miniconda3-latest-Linux-x86_64.sh</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Allow conda to have access to PATH (i.e., one can type conda … and this will call the conda package manager)</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Exit shell to allow conda to have access to PATH and log back in</p></li>
+<li><p>conda install numpy</p></li>
+<li><p>git clone <a class="reference external" href="https://github.com/zblanks/parallel_esn.git">https://github.com/zblanks/parallel_esn.git</a></p></li>
+<li><p>cd parallel_esn</p></li>
+<li><p>pip install -e .</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>This ensures that the Cython code compiles for the package</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ol>
+<p>To test that the package was installed correctly, type the following command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">parallel_esn</span><span class="o">.</span><span class="n">experiments</span><span class="o">.</span><span class="n">profile_seq</span> <span class="o">--</span><span class="n">num_iter</span> <span class="mi">1</span>
 </pre></div>
 </div>
+<p>In the Ubuntu 16.04 OS, you should see the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Iteration</span> <span class="mi">0</span>
+<span class="p">{</span><span class="s1">&#39;k&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;hidden_dim&#39;</span><span class="p">:</span> <span class="mi">112</span><span class="p">,</span> <span class="s1">&#39;spectral_radius&#39;</span><span class="p">:</span> <span class="mf">1.2940912584107198</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="mf">0.10919073963823023</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="mf">0.8153388906631103</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">:</span> <span class="mf">141.20288318144654</span><span class="p">}</span>
+<span class="n">validation</span> <span class="n">loss</span> <span class="o">=</span> <span class="mf">0.616245337445537</span>
+</pre></div>
+</div>
+<p>The output may be slightly different depending on the OS, but the iteration
+number, hyper-parameters, and validation loss should be printed.</p>
 </div>
 
 
@@ -173,7 +208,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="usage.html" class="btn btn-neutral float-right" title="Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="network-training.html" class="btn btn-neutral float-right" title="Echo State Network Training" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral float-left" title="Parallel Echo State Network Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

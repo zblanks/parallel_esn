@@ -1,10 +1,10 @@
 ./_modules/index.html
+./_modules/parallel_esn/bo.html
 ./_modules/parallel_esn/esn.html
+./_sources/bo.rst.txt
 ./_sources/index.rst.txt
 ./_sources/installation.rst.txt
 ./_sources/network-training.rst.txt
-./_sources/release-history.rst.txt
-./_sources/usage.rst.txt
 ./_static/basic.css
 ./_static/copy-button.svg
 ./_static/copybutton.css
@@ -61,12 +61,11 @@
 ./_static/searchtools.js
 ./_static/underscore-1.3.1.js
 ./_static/underscore.js
+./bo.html
 ./genindex.html
 ./index.html
 ./installation.html
 ./network-training.html
 ./objects.inv
-./release-history.html
 ./search.html
 ./searchindex.js
-./usage.html

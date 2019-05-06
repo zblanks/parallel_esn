@@ -5,7 +5,7 @@ Echo State Network Training
 Overview
 --------
 The primary interface with the echo state network (ESN) in this code base is
-through the :func:`~esn.esn.ESN` class. This class allows one to define an
+through the :func:`~parallel_esn.esn.ESN` class. This class allows one to define an
 ESN and fit it to data with a given set of hyper-parameters.
 
 Defining the Network
@@ -17,7 +17,6 @@ the reservoir of the ESN as a small-world network. We did this because there
 has been recent research which suggests that by having a more fine-grained
 specification of the reservoir network, one can see improvements in
 out-of-sample performance for the model :cite:`kawai2017echo`.
-
 
 Thus instead of specifying the sparsity of the reservoir, a user can now have
 greater control over the network by providing the number of neighbors and the
