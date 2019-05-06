@@ -165,7 +165,7 @@ def main():
         # the plotting time
         start_time = time.time()
 
-        bo = BO(k=(2, 100), hidden_dim=(400, 800), random_state=12)
+        bo = BO(k=(50, 300), hidden_dim=(400, 800), random_state=12)
         init_params = bo.find_best_choices(num_choices=comm.size-1)
         for i in range(1, comm.size):
             if comm.size - 1 == 1:
@@ -213,6 +213,11 @@ def main():
                        beta=best_params['beta'])
 
         best_esn.train(trainU, trainY, verbose=args.verbose, compute_loss_freq=100)
+        # Compute test error
+        test_loss = best_esn.recursive_validate(testU, testY, in_len, pred_len,
+                                                verbose=args.verbose)
+
+        print("test loss = {}".format(test_loss))
 
         make_figures(testU, best_esn, mu, sigma, in_len, pred_len, args.outdir)
 
