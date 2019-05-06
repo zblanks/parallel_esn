@@ -78,7 +78,7 @@ def main():
     trainU, trainY, valU, valY, testU, testY, mu, sigma = prep_data(args.filename,
                                                                     in_len, pred_len)
 
-    bo = BO(k=(2, 100), hidden_dim=(400, 800), random_state=12)
+    bo = BO(k=(50, 300), hidden_dim=(400, 800), random_state=12)
     # for reproducibility
     np.random.seed(12)
 
@@ -89,7 +89,7 @@ def main():
 
     for i in range(args.num_iter):
         h_star = bo.find_best_choices()
-        print("Iteration {}".format(i))
+        print("Iteration {}".format(i), flush=True)
         print(h_star)
 
         esn = ESN(input_dim=trainU.shape[1], hidden_dim=h_star['hidden_dim'],
@@ -118,7 +118,7 @@ def main():
     print("Test set size: {}".format(testU.shape[0]))
 
     # Compute test error
-    test_loss = esn.recursive_validate(testU, valU, in_len, pred_len, verbose=args.verbose)
+    test_loss = best_esn.recursive_validate(testU, testY, in_len, pred_len, verbose=args.verbose)
 
     print("test loss = {}".format(test_loss))
 
