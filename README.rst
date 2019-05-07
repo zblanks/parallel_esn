@@ -9,7 +9,7 @@ Parallel Echo State Network
         :target: https://pypi.python.org/pypi/parallel_esn
 
 
-This repository contains the code to access the Python package *parallel_esn* which was developed for the Harvard CS205 final project. The code is under a three clause BSD license. To read the documentation for the package code visit: 
+This repository contains the code to access the Python package parallel_esn which was developed for the Harvard CS205 final project. The code is under a three clause BSD license. To read the documentation for the package code visit: 
 
 * Documentation: https://zblanks.github.io/parallel_esn.
 
@@ -41,20 +41,34 @@ The source code used to develop the package as well as run experiments for the p
        
 The folders and files of note are as follows:
 
-* bo.py: Defines the class for the Bayesian optimization used to train the echo state network (ESN)
-* esn.py: Defines the class used to train and validate an echo state network
-* train_esn.pyx: Cython code used to optimize part of the training process
-* data/: Contains an example data set used to check the correctness of the implementation
-* example/: A number of small scale examples to demonstrate versatility and correctness of implementation
-* tests/: Unit tests used to validate the functions defined in the package
-* seq_west_coast_weather.py: Sequential implementation of the large-scale ESN training and hyper-parameter search
-* mpi_west_coast_weather.py: Hybrid MPI-OpenMP implementation of the large-scale ESN training and hyper-parameter search
+bo.py_: Defines the class for the Bayesian optimization used to train the echo state network (ESN)
 
-        - Note: MPI is explictly defined, but OpenMP is controlled via environment variables (more details to follow)
+esn.py_: Defines the class used to train and validate an echo state network
+
+train_esn.pyx_: Cython code used to optimize part of the training process
+
+data_: Example data used to check correctness of code implementation
+
+example_: Small scale examples to check correctness of code implementation
+
+tests_: Unit tests to check correctness of functions in the package
+
+seq_west_coast_weather.py_: Sequential code for large scale ESN training and hyper-parameter search
+
+mpi_west_coast_weather.py_: Hybrid parallel code for large scale ESN training and hyper-parameter search
+
+.. _bo.py: https://github.com/zblanks/parallel_esn/blob/master/parallel_esn/bo.py
+.. _esn.py: https://github.com/zblanks/parallel_esn/blob/master/parallel_esn/esn.py
+.. _train_esn.pyx: https://github.com/zblanks/parallel_esn/blob/master/parallel_esn/train_esn.pyx
+.. _data: https://github.com/zblanks/parallel_esn/tree/master/parallel_esn/data
+.. _example: https://github.com/zblanks/parallel_esn/tree/master/parallel_esn/example
+.. _tests: https://github.com/zblanks/parallel_esn/tree/master/parallel_esn/tests
+.. _seq_west_coast_weather.py: https://github.com/zblanks/parallel_esn/blob/master/parallel_esn/experiments/seq_west_coast_weather.py
+.. _mpi_west_coast_weather.py: https://github.com/zblanks/parallel_esn/blob/master/parallel_esn/experiments/mpi_west_coast_weather.py
 
 Installation
 ------------
-To install the code, we assume the user is working in a UNIX-enabled environment. All code was tested an Ubuntu 16.04 operating system. To download the package please take the following steps in the UNIX environment in the order described:
+To install the code, we assume the user is working in a UNIX-enabled environment. All code was tested in an Ubuntu 16.04 operating system. To download the package please take the following steps in the UNIX environment in the order described:
 
 1. sudo apt-get update
 2. sudo apt-get install gcc
@@ -108,7 +122,7 @@ To run the sequential version of the experiment, type the following commands
 
 ::
 
-        export OPENBLAS_NUM_THREADS=1
+        export OMP_NUM_THREADS=1
         mkdir figs
         python -m parallel_esn.experiments.seq_west_coast_weather
         
@@ -125,8 +139,7 @@ To run the hybrid parallel version of the experiment, type the following command
 
 ::
         
-        export OPENBLAS_NUM_THREADS=n
         mkdir figs-mpi
-        mpirun -np x python -m parallel_esn.experiments.mpi_west_coast_weather --outdir figs-mpi
+        mpirun -np x python -m parallel_esn.experiments.mpi_west_coast_weather --outdir figs-mpi --num_threads k
         
-The number of threads is explictly set using the export command; howver, again NumPy will default to all available threads if no value is provided. The MPI application is controlled through standard MPI commands such as the number of tasks and, if there are multiple nodes, by providing the list of hosts. The command line arguments passed to the module are the same as the sequential version of the code.
+The number of threads is controlled by the command line argument --num_threads, which is the only new argument for the script; the rest are the same as the sequential version. The MPI application is controlled through standard MPI commands such as the number of tasks and, if there are multiple nodes, by providing the hosts.
