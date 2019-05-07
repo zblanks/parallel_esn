@@ -34,11 +34,16 @@ class ESN:
         Random state initializer
     weight_distn : {"uniform", "normal"}, optional
         Distribution of reservoir weights
+    use_cython : bool, optional
+        Whether to use the Cython compiled code when computing the X matrix. Not
+        compatible with use_sparse.
+    use_sparse : bool, optional
+        Whether to use a sparse matrix for the reservoir W
     """
 
     def __init__(self, input_dim, hidden_dim, output_dim, k,
                  spectral_radius=0.9, p=0.1, beta=1e-3, alpha=0.7,
-                 random_state=None, weight_distn='uniform', use_cython=True):
+                 random_state=None, weight_distn='uniform', use_cython=False, use_sparse=False):
         """
 
         Parameters
@@ -64,8 +69,11 @@ class ESN:
             Random state initializer
         weight_distn : {"uniform", "normal"}, optional
             Distribution of reservoir weights
-        use_cython : bool, optional
-            Whether to use the Cython compiled code when computing the X matrix
+        use_cython : bool, optional, default=False
+            Whether to use the Cython compiled code when computing the X matrix. Not
+            compatible with use_sparse.
+        use_sparse : bool, optional, default=False
+            Whether to use a sparse matrix for the reservoir W
         """
 
         self.input_dim = input_dim
@@ -78,7 +86,14 @@ class ESN:
         self.alpha = alpha
         self.rng = create_rng(random_state)
         self.weight_distn = weight_distn
-        self.use_cython = use_cython
+        if use_cython and use_sparse:
+            warnings.warn("Warning: Cannot use Cython if using sparse matrices. Setting "
+                          "use_cython to False, and use_sparse to True.")
+            self.use_cython = False
+            self.use_sparse = True
+        else:
+            self.use_cython = use_cython
+            self.use_sparse = use_sparse
         self.W_out = None
         self.W = self._initialize_hidden_layer()
         self.W_in = self._initialize_input_layer()
@@ -94,32 +109,47 @@ class ESN:
 
         Returns
         -------
-        W : np.ndarray
+        W : np.ndarray or scipy.sparse.csr.csr_matrix
             Hidden layer weight matrix
 
         """
         G = nx.watts_strogatz_graph(self.hidden_dim, self.k, self.p, self.rng)
-        A = nx.to_numpy_array(G)
+        if self.use_sparse:
+            A = nx.to_scipy_sparse_matrix(G, dtype=np.float64)
+        else:
+            A = nx.to_numpy_array(G, dtype=np.float64)
 
         if self.weight_distn == 'uniform':
-            weights = self.rng.uniform(low=-1, high=1, size=(self.hidden_dim,
-                                                             self.hidden_dim))
+            if self.use_sparse:
+                weights = self.rng.uniform(low=-1, high=1, size=A.nnz)
+            else:
+                weights = self.rng.uniform(low=-1, high=1,
+                                           size=(self.hidden_dim, self.hidden_dim))
         elif self.weight_distn == 'normal':
-            weights = self.rng.randn(d0=self.hidden_dim, d1=self.hidden_dim)
+            if self.use_sparse:
+                weights = self.rng.randn(d0=A.nnz)
+            else:
+                weights = self.rng.randn(d0=self.hidden_dim, d1=self.hidden_dim)
         else:
             raise ValueError('Only support "uniform" or "normal" weights')
 
-        W = A * weights
+        if self.use_sparse:
+            W = A  # Shallow copy is fine
+            idx, idy = A.nonzero()
+            for i in range(idx.shape[0]):
+                W[idx[i], idy[i]] = A[idx[i], idy[i]] * weights[i]
+        else:
+            W = A * weights
 
         # The spectral radius can be controlled by normalizing the desired
         # radius over the current value for the matrix
-        current_radius = compute_spectral_radius(W)
+        current_radius = compute_spectral_radius(W, is_sparse=self.use_sparse)
         if current_radius == 0.:
             raise ValueError('Spectral radius equals zero; make graph less '
                              'sparse')
 
         W *= self.spectral_radius / current_radius
-        return W.astype(np.float64)
+        return W
 
     def _initialize_input_layer(self):
         """
@@ -219,7 +249,7 @@ class ESN:
         self.clear_state()
 
     def train(self, batchU, batchY_true, clear_state=False, warmup=10, verbose=1,
-              compute_loss_freq=-1):
+              compute_loss_freq=-1, warmup_each_batch=False):
         """
         Trains on U's and corresponding Y_true's, batched in first index.
 
@@ -247,6 +277,9 @@ class ESN:
         compute_loss_freq : int, default=-1
             How often to compute training loss. Only for information, not necessary
             for training. Negative value disables computing training loss.
+        warmup_each_batch : bool, optional, default=False
+            Whether to use a warmup period on each batch before training. If the batches are
+            are not consecutive time series, setting this to True is usually desirable.
 
         Returns
         -------
@@ -273,6 +306,10 @@ class ESN:
                         warnings.warn("Warning: specified to discard more warmup states than "
                                       "there are in the batch of input data. Network is not "
                                       "being trained.")
+                    if warmup_each_batch:
+                        warnings.warn("Warning: specified to discard more warmup states than "
+                                      "there are in the batch of input data. Network is not "
+                                      "being trained.")
                     elif s == nseq - 1:
                         warnings.warn("Warning: specified to discard more warmup states than "
                                       "there are input data. Network was not trained.")
@@ -280,19 +317,21 @@ class ESN:
                 else:
                     self.XXt += X[:, warmup:] @ X[:, warmup:].T
                     self.YXt += batchY_true[s, :, warmup:] @ X[:, warmup:].T
-                    warmup = 0  # Done with warmup
+                    if not warmup_each_batch:
+                        warmup = 0  # Done with warmup
             else:  # Done with warmup
                 self.XXt += X @ X.T
                 self.YXt += batchY_true[s, :, :] @ X.T
-            self._compute_Wout()
             status = 'Training:'
             if compute_loss_freq > 0:
                 if s % compute_loss_freq == 0:
+                    self._compute_Wout()
                     # Use precomputed X instead of recomputing it from U
                     loss[s // compute_loss_freq] = self.score_with_X(X, batchY_true[s, :, :])
                     status += ' loss = {0:.4f}'.format(loss[s // compute_loss_freq])
             if verbose == 1:
                 progress(s, nseq, status=status)
+        self._compute_Wout()
         return loss
 
     def validate(self, batchU, batchY_true, warmup=10, verbose=1):
@@ -368,7 +407,7 @@ class ESN:
         return loss/nseq
 
     def train_validate(self, trainU, trainY, valU, valY,
-                       warmup=10, verbose=1, compute_loss_freq=-1):
+                       warmup=10, verbose=1, compute_loss_freq=-1, warmup_each_batch=False):
         """
         Train on provided training data, and immediately validate
         and return validation loss.
@@ -396,6 +435,9 @@ class ESN:
         compute_loss_freq : int, optional, default=-1
             How often to compute training loss. Only for information, not necessary
             for training. Negative value disables computing training loss.
+        warmup_each_batch : bool, optional, default=False
+            Whether to use a warmup period on each batch before training. If the batches are
+            are not consecutive time series, setting this to True is usually desirable.
 
         Returns
         -------
@@ -403,12 +445,14 @@ class ESN:
             Returns the sum of the losses computed on each sequence in validation set.
         """
         self.train(trainU, trainY, warmup=warmup,
-                   verbose=verbose, compute_loss_freq=compute_loss_freq)
+                   verbose=verbose, compute_loss_freq=compute_loss_freq,
+                   warmup_each_batch=warmup_each_batch)
         return self.validate(valU, valY, warmup=warmup, verbose=verbose)
 
     def recursive_train_validate(self, trainU, trainY, valU, valY,
                                  input_len, pred_len,
-                                 warmup=10, verbose=1, compute_loss_freq=-1):
+                                 warmup=10, verbose=1, compute_loss_freq=-1,
+                                 warmup_each_batch=False):
         """
         Train on provided training data, and immediately validate
         and return validation loss.
@@ -440,6 +484,9 @@ class ESN:
         compute_loss_freq : int, optional, default=-1
             How often to compute training loss. Only for information, not necessary
             for training. Negative value disables computing training loss.
+        warmup_each_batch : bool, optional, default=False
+            Whether to use a warmup period on each batch before training. If the batches are
+            are not consecutive time series, setting this to True is usually desirable.
 
         Returns
         -------
@@ -447,7 +494,8 @@ class ESN:
             Returns the sum of the losses computed on each sequence in validation set.
         """
         self.train(trainU, trainY, warmup=warmup,
-                   verbose=verbose, compute_loss_freq=compute_loss_freq)
+                   verbose=verbose, compute_loss_freq=compute_loss_freq,
+                   warmup_each_batch=warmup_each_batch)
         return self.recursive_validate(valU, valY, input_len, pred_len, verbose=verbose)
 
     def predict(self, U):
