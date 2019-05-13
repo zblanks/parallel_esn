@@ -1,14 +1,17 @@
 import numpy as np
+from scipy.sparse.linalg import eigs as sparse_eigs
 
 
-def compute_spectral_radius(X):
+def compute_spectral_radius(X, is_sparse=False):
     """
     Computes the spectral radius of a matrix
 
     Parameters
     ----------
-    X : np.ndarray
+    X : np.ndarray or scipy.sparse.csr.csr_matrix
         Input matrix
+    is_sparse : bool, optional, default=False
+        Whether the passed matrix X is a SciPy sparse matrix or not.
 
     Returns
     -------
@@ -19,8 +22,13 @@ def compute_spectral_radius(X):
     # To compute the eigen-values of a matrix, it must be square
     assert X.shape[0] == X.shape[1], print('Input matrix must be square')
 
-    eigvals = np.linalg.eigvals(X)
-    return np.max(np.abs(eigvals))
+    if is_sparse:
+        eigvec = sparse_eigs(X, k=1, which='LM', return_eigenvectors=False)
+        maxeig = np.abs(eigvec[0].real)
+    else:
+        eigvals = np.linalg.eigvals(X)
+        maxeig = np.max(np.abs(eigvals))
+    return maxeig
 
 
 def create_rng(random_state):

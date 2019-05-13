@@ -1,5 +1,6 @@
 from pkg_resources import resource_filename
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 from ..esn import ESN
 from ..utils import to_forecast_form, standardize_traindata, scale_data
@@ -25,25 +26,28 @@ train_dat, mu, sigma = standardize_traindata(train_dat)
 # Scale validation data by mean and s.dev determined by training data
 val_dat = scale_data(val_dat, mu, sigma)
 
-batch_size = 100
+batch_size = 400
 # Convert data to forecast form
 trainU, trainY, rU, rY = to_forecast_form(train_dat, batch_size)
 # Batch size of -1 will place all data in a single batch.
 valU, valY, rU, rY = to_forecast_form(val_dat, -1)
 
 # Create a new ESN
-esn = ESN(1, 200, 1, 3, alpha=0.8)
+start_time = time.time()
+esn = ESN(1, 2400, 1, k=20, alpha=0.8, use_cython=False, use_sparse=True)
 loss = esn.train_validate(trainU, trainY, valU, valY)
 print("validation loss = {}".format(loss))
+end_time = time.time()
+print("Time taken: {} sec".format(end_time - start_time))
 
-time = np.arange(valU.shape[2])
+time_arr = np.arange(valU.shape[2])
 input_len = 180
-pred_len = 15
-plt.plot(time[:input_len], valU[0, 0, :input_len], 'ob', label='input')
+pred_len = 24
+plt.plot(time_arr[:input_len], valU[0, 0, :input_len], 'ob', label='input')
 pred = esn.recursive_predict(valU[0, 0:1, :input_len], pred_len)
-plt.plot(time[input_len:input_len+pred_len], pred[0, :], '-r', label='predicted')
-plt.plot(time[input_len:input_len+pred_len], valU[0, 0, input_len:input_len+pred_len], '^g', label='observed')
-plt.xlim(time[input_len+pred_len - 4*pred_len], time[input_len+pred_len])
+plt.plot(time_arr[input_len:input_len+pred_len], pred[0, :], '-r', label='predicted')
+plt.plot(time_arr[input_len:input_len+pred_len], valU[0, 0, input_len:input_len+pred_len], '^g', label='observed')
+plt.xlim(time_arr[input_len+pred_len - 4*pred_len], time_arr[input_len+pred_len])
 plt.title("PJM Standardized Power Consumption (Recursive 1 Step Forecast)")
 plt.ylabel("Arb. Units.")
 plt.xlabel("Hours")
