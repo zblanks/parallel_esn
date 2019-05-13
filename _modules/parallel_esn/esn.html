@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post57+gc1b97ee documentation</title>
+  <title>parallel_esn.esn &mdash; Parallel Echo State Network 0.post60+ge3f7d7c documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.post57+gc1b97ee
+                0.post60+ge3f7d7c
               </div>
             
           
@@ -189,11 +189,16 @@
 <span class="sd">        Random state initializer</span>
 <span class="sd">    weight_distn : {&quot;uniform&quot;, &quot;normal&quot;}, optional</span>
 <span class="sd">        Distribution of reservoir weights</span>
+<span class="sd">    use_cython : bool, optional</span>
+<span class="sd">        Whether to use the Cython compiled code when computing the X matrix. Not</span>
+<span class="sd">        compatible with use_sparse.</span>
+<span class="sd">    use_sparse : bool, optional</span>
+<span class="sd">        Whether to use a sparse matrix for the reservoir W</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
                  <span class="n">spectral_radius</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-                 <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_distn</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="n">use_cython</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                 <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_distn</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="n">use_cython</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -219,8 +224,11 @@
 <span class="sd">            Random state initializer</span>
 <span class="sd">        weight_distn : {&quot;uniform&quot;, &quot;normal&quot;}, optional</span>
 <span class="sd">            Distribution of reservoir weights</span>
-<span class="sd">        use_cython : bool, optional</span>
-<span class="sd">            Whether to use the Cython compiled code when computing the X matrix</span>
+<span class="sd">        use_cython : bool, optional, default=False</span>
+<span class="sd">            Whether to use the Cython compiled code when computing the X matrix. Not</span>
+<span class="sd">            compatible with use_sparse.</span>
+<span class="sd">        use_sparse : bool, optional, default=False</span>
+<span class="sd">            Whether to use a sparse matrix for the reservoir W</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">input_dim</span>
@@ -233,7 +241,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">create_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_distn</span> <span class="o">=</span> <span class="n">weight_distn</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">use_cython</span> <span class="o">=</span> <span class="n">use_cython</span>
+        <span class="k">if</span> <span class="n">use_cython</span> <span class="ow">and</span> <span class="n">use_sparse</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: Cannot use Cython if using sparse matrices. Setting &quot;</span>
+                          <span class="s2">&quot;use_cython to False, and use_sparse to True.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_cython</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_cython</span> <span class="o">=</span> <span class="n">use_cython</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span> <span class="o">=</span> <span class="n">use_sparse</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W_out</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_hidden_layer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">W_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_input_layer</span><span class="p">()</span>
@@ -249,32 +264,47 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        W : np.ndarray</span>
+<span class="sd">        W : np.ndarray or scipy.sparse.csr.csr_matrix</span>
 <span class="sd">            Hidden layer weight matrix</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">watts_strogatz_graph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
-        <span class="n">A</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_array</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_scipy_sparse_matrix</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_array</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_distn</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span>
-                                                             <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                           <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">))</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_distn</span> <span class="o">==</span> <span class="s1">&#39;normal&#39;</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">d0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">d0</span><span class="o">=</span><span class="n">A</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">d0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">d1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dim</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Only support &quot;uniform&quot; or &quot;normal&quot; weights&#39;</span><span class="p">)</span>
 
-        <span class="n">W</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">weights</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">A</span>  <span class="c1"># Shallow copy is fine</span>
+            <span class="n">idx</span><span class="p">,</span> <span class="n">idy</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">idx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">W</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">idy</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">idy</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">A</span> <span class="o">*</span> <span class="n">weights</span>
 
         <span class="c1"># The spectral radius can be controlled by normalizing the desired</span>
         <span class="c1"># radius over the current value for the matrix</span>
-        <span class="n">current_radius</span> <span class="o">=</span> <span class="n">compute_spectral_radius</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
+        <span class="n">current_radius</span> <span class="o">=</span> <span class="n">compute_spectral_radius</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">is_sparse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_sparse</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">current_radius</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Spectral radius equals zero; make graph less &#39;</span>
                              <span class="s1">&#39;sparse&#39;</span><span class="p">)</span>
 
         <span class="n">W</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_radius</span> <span class="o">/</span> <span class="n">current_radius</span>
-        <span class="k">return</span> <span class="n">W</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">W</span>
 
     <span class="k">def</span> <span class="nf">_initialize_input_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -374,7 +404,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">clear_state</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="ESN.train"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">clear_state</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-              <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+              <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">warmup_each_batch</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trains on U&#39;s and corresponding Y_true&#39;s, batched in first index.</span>
 
@@ -402,6 +432,9 @@
 <span class="sd">        compute_loss_freq : int, default=-1</span>
 <span class="sd">            How often to compute training loss. Only for information, not necessary</span>
 <span class="sd">            for training. Negative value disables computing training loss.</span>
+<span class="sd">        warmup_each_batch : bool, optional, default=False</span>
+<span class="sd">            Whether to use a warmup period on each batch before training. If the batches are</span>
+<span class="sd">            are not consecutive time series, setting this to True is usually desirable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -428,6 +461,10 @@
                         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: specified to discard more warmup states than &quot;</span>
                                       <span class="s2">&quot;there are in the batch of input data. Network is not &quot;</span>
                                       <span class="s2">&quot;being trained.&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">warmup_each_batch</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: specified to discard more warmup states than &quot;</span>
+                                      <span class="s2">&quot;there are in the batch of input data. Network is not &quot;</span>
+                                      <span class="s2">&quot;being trained.&quot;</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="n">nseq</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Warning: specified to discard more warmup states than &quot;</span>
                                       <span class="s2">&quot;there are input data. Network was not trained.&quot;</span><span class="p">)</span>
@@ -435,19 +472,21 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="n">warmup</span><span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">warmup</span><span class="p">:]</span><span class="o">.</span><span class="n">T</span>
-                    <span class="n">warmup</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Done with warmup</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">warmup_each_batch</span><span class="p">:</span>
+                        <span class="n">warmup</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Done with warmup</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># Done with warmup</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">XXt</span> <span class="o">+=</span> <span class="n">X</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">YXt</span> <span class="o">+=</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">@</span> <span class="n">X</span><span class="o">.</span><span class="n">T</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_Wout</span><span class="p">()</span>
             <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Training:&#39;</span>
             <span class="k">if</span> <span class="n">compute_loss_freq</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">s</span> <span class="o">%</span> <span class="n">compute_loss_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_Wout</span><span class="p">()</span>
                     <span class="c1"># Use precomputed X instead of recomputing it from U</span>
                     <span class="n">loss</span><span class="p">[</span><span class="n">s</span> <span class="o">//</span> <span class="n">compute_loss_freq</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_with_X</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
                     <span class="n">status</span> <span class="o">+=</span> <span class="s1">&#39; loss = </span><span class="si">{0:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loss</span><span class="p">[</span><span class="n">s</span> <span class="o">//</span> <span class="n">compute_loss_freq</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">verbose</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">progress</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">nseq</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_compute_Wout</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">loss</span></div>
 
 <div class="viewcode-block" id="ESN.validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batchU</span><span class="p">,</span> <span class="n">batchY_true</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -523,7 +562,7 @@
         <span class="k">return</span> <span class="n">loss</span><span class="o">/</span><span class="n">nseq</span></div>
 
 <div class="viewcode-block" id="ESN.train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span>
-                       <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+                       <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">warmup_each_batch</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Train on provided training data, and immediately validate</span>
 <span class="sd">        and return validation loss.</span>
@@ -551,6 +590,9 @@
 <span class="sd">        compute_loss_freq : int, optional, default=-1</span>
 <span class="sd">            How often to compute training loss. Only for information, not necessary</span>
 <span class="sd">            for training. Negative value disables computing training loss.</span>
+<span class="sd">        warmup_each_batch : bool, optional, default=False</span>
+<span class="sd">            Whether to use a warmup period on each batch before training. If the batches are</span>
+<span class="sd">            are not consecutive time series, setting this to True is usually desirable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -558,12 +600,14 @@
 <span class="sd">            Returns the sum of the losses computed on each sequence in validation set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span>
-                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">)</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">,</span>
+                   <span class="n">warmup_each_batch</span><span class="o">=</span><span class="n">warmup_each_batch</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ESN.recursive_train_validate"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.recursive_train_validate">[docs]</a>    <span class="k">def</span> <span class="nf">recursive_train_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span>
                                  <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">,</span>
-                                 <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+                                 <span class="n">warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">warmup_each_batch</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Train on provided training data, and immediately validate</span>
 <span class="sd">        and return validation loss.</span>
@@ -595,6 +639,9 @@
 <span class="sd">        compute_loss_freq : int, optional, default=-1</span>
 <span class="sd">            How often to compute training loss. Only for information, not necessary</span>
 <span class="sd">            for training. Negative value disables computing training loss.</span>
+<span class="sd">        warmup_each_batch : bool, optional, default=False</span>
+<span class="sd">            Whether to use a warmup period on each batch before training. If the batches are</span>
+<span class="sd">            are not consecutive time series, setting this to True is usually desirable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -602,7 +649,8 @@
 <span class="sd">            Returns the sum of the losses computed on each sequence in validation set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">trainU</span><span class="p">,</span> <span class="n">trainY</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="n">warmup</span><span class="p">,</span>
-                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">)</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">compute_loss_freq</span><span class="o">=</span><span class="n">compute_loss_freq</span><span class="p">,</span>
+                   <span class="n">warmup_each_batch</span><span class="o">=</span><span class="n">warmup_each_batch</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">recursive_validate</span><span class="p">(</span><span class="n">valU</span><span class="p">,</span> <span class="n">valY</span><span class="p">,</span> <span class="n">input_len</span><span class="p">,</span> <span class="n">pred_len</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ESN.predict"><a class="viewcode-back" href="../../network-training.html#parallel_esn.esn.ESN.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">U</span><span class="p">):</span>

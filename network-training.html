@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post57+gc1b97ee documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post60+ge3f7d7c documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post57+gc1b97ee
+                0.post60+ge3f7d7c
               </div>
             
           
@@ -186,7 +186,7 @@ re-wiring probability for the graph.</p>
 <h2>Function Documentation<a class="headerlink" href="#function-documentation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="parallel_esn.esn.ESN">
-<em class="property">class </em><code class="descclassname">parallel_esn.esn.</code><code class="descname">ESN</code><span class="sig-paren">(</span><em>input_dim</em>, <em>hidden_dim</em>, <em>output_dim</em>, <em>k</em>, <em>spectral_radius=0.9</em>, <em>p=0.1</em>, <em>beta=0.001</em>, <em>alpha=0.7</em>, <em>random_state=None</em>, <em>weight_distn='uniform'</em>, <em>use_cython=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">parallel_esn.esn.</code><code class="descname">ESN</code><span class="sig-paren">(</span><em>input_dim</em>, <em>hidden_dim</em>, <em>output_dim</em>, <em>k</em>, <em>spectral_radius=0.9</em>, <em>p=0.1</em>, <em>beta=0.001</em>, <em>alpha=0.7</em>, <em>random_state=None</em>, <em>weight_distn='uniform'</em>, <em>use_cython=False</em>, <em>use_sparse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sequential Echo State Network class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -202,6 +202,9 @@ network for the hidden layer</p></li>
 <li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – ESN leaking rate</p></li>
 <li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em> or </em><em>np.random.RandomState</em><em>, </em><em>optional</em>) – Random state initializer</p></li>
 <li><p><strong>weight_distn</strong> (<em>{&quot;uniform&quot;</em><em>, </em><em>&quot;normal&quot;}</em><em>, </em><em>optional</em>) – Distribution of reservoir weights</p></li>
+<li><p><strong>use_cython</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use the Cython compiled code when computing the X matrix. Not
+compatible with use_sparse.</p></li>
+<li><p><strong>use_sparse</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use a sparse matrix for the reservoir W</p></li>
 </ul>
 </dd>
 </dl>
@@ -315,7 +318,7 @@ NMSE is computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.recursive_train_validate">
-<code class="descname">recursive_train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>input_len</em>, <em>pred_len</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">recursive_train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>input_len</em>, <em>pred_len</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -337,6 +340,8 @@ depends on the memory of the network and typically ranges from 10s to 100s.</p><
 <li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 <li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -433,7 +438,7 @@ computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>clear_state=False</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>clear_state=False</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trains on U’s and corresponding Y_true’s, batched in first index.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -454,6 +459,8 @@ the ESN.</p></li>
 <li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 <li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -469,7 +476,7 @@ compute_loss_freq is less than equal to 0.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train_validate">
-<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -489,6 +496,8 @@ depends on the memory of the network and typically ranges from 10s to 100s.</p><
 <li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 <li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
