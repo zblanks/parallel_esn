@@ -10,4 +10,6 @@ Maintainer
 Contributors
 ------------
 
-None yet. Why not be the first? See: CONTRIBUTING.rst
+* Cedric Flamant <https://github.com/cflamant>
+
+Want to be a contributor? See: CONTRIBUTING.rst
