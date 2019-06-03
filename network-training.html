@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post60+ge3f7d7c documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post63+g7332fce documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.post60+ge3f7d7c
+                0.post63+g7332fce
               </div>
             
           
@@ -186,7 +186,7 @@ re-wiring probability for the graph.</p>
 <h2>Function Documentation<a class="headerlink" href="#function-documentation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="parallel_esn.esn.ESN">
-<em class="property">class </em><code class="descclassname">parallel_esn.esn.</code><code class="descname">ESN</code><span class="sig-paren">(</span><em>input_dim</em>, <em>hidden_dim</em>, <em>output_dim</em>, <em>k</em>, <em>spectral_radius=0.9</em>, <em>p=0.1</em>, <em>beta=0.001</em>, <em>alpha=0.7</em>, <em>random_state=None</em>, <em>weight_distn='uniform'</em>, <em>use_cython=False</em>, <em>use_sparse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">parallel_esn.esn.</code><code class="sig-name descname">ESN</code><span class="sig-paren">(</span><em class="sig-param">input_dim</em>, <em class="sig-param">hidden_dim</em>, <em class="sig-param">output_dim</em>, <em class="sig-param">k</em>, <em class="sig-param">spectral_radius=0.9</em>, <em class="sig-param">p=0.1</em>, <em class="sig-param">beta=0.001</em>, <em class="sig-param">alpha=0.7</em>, <em class="sig-param">random_state=None</em>, <em class="sig-param">weight_distn='uniform'</em>, <em class="sig-param">use_cython=False</em>, <em class="sig-param">use_sparse=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sequential Echo State Network class</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -210,13 +210,13 @@ compatible with use_sparse.</p></li>
 </dl>
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.clear_state">
-<code class="descname">clear_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.clear_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.clear_state" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">clear_state</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.clear_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.clear_state" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears X0, the reservoir’s memory of previous inputs and neural state</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.predict">
-<code class="descname">predict</code><span class="sig-paren">(</span><em>U</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">U</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predicts Yhat, output observations, given time series of inputs U</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -236,7 +236,7 @@ obtain feature vectors as rows stacked vertically in time.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.predict_with_X">
-<code class="descname">predict_with_X</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict_with_X" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict_with_X</code><span class="sig-paren">(</span><em class="sig-param">X</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.predict_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.predict_with_X" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predicts Yhat, output observations, given X already generated
 from input data U. Useful if X has already been computed and a prediction
 is desired without affecting the current state of the reservoir.</p>
@@ -257,7 +257,7 @@ Dimensions of (1+ N_u + N_x) x T</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.recursive_predict">
-<code class="descname">recursive_predict</code><span class="sig-paren">(</span><em>U</em>, <em>iterations</em>, <em>cold_start=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_predict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">recursive_predict</code><span class="sig-paren">(</span><em class="sig-param">U</em>, <em class="sig-param">iterations</em>, <em class="sig-param">cold_start=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predicts Yhat, output observations following the given time series of inputs U
 This method assumes that the network has been trained to produce one-step-forecasting,
 where the output y(t) corresponds to u(t+1), i.e. what the next input would have been.
@@ -293,7 +293,7 @@ obtain feature vectors as rows stacked vertically in time.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.recursive_score">
-<code class="descname">recursive_score</code><span class="sig-paren">(</span><em>U</em>, <em>Y_true</em>, <em>input_len</em>, <em>pred_len</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_score" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">recursive_score</code><span class="sig-paren">(</span><em class="sig-param">U</em>, <em class="sig-param">Y_true</em>, <em class="sig-param">input_len</em>, <em class="sig-param">pred_len</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_score" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes loss in recursive one-step prediction, intended for validation set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -318,7 +318,7 @@ NMSE is computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.recursive_train_validate">
-<code class="descname">recursive_train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>input_len</em>, <em>pred_len</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">recursive_train_validate</code><span class="sig-paren">(</span><em class="sig-param">trainU</em>, <em class="sig-param">trainY</em>, <em class="sig-param">valU</em>, <em class="sig-param">valY</em>, <em class="sig-param">input_len</em>, <em class="sig-param">pred_len</em>, <em class="sig-param">warmup=10</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">compute_loss_freq=-1</em>, <em class="sig-param">warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -355,7 +355,7 @@ are not consecutive time series, setting this to True is usually desirable.</p><
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.recursive_validate">
-<code class="descname">recursive_validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>input_len</em>, <em>pred_len</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_validate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">recursive_validate</code><span class="sig-paren">(</span><em class="sig-param">batchU</em>, <em class="sig-param">batchY_true</em>, <em class="sig-param">input_len</em>, <em class="sig-param">pred_len</em>, <em class="sig-param">verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.recursive_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.recursive_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get loss on validation set for recursive one-step prediction. Uses recursive_score
 to compute the total error.</p>
 <dl class="field-list simple">
@@ -381,13 +381,13 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.reset">
-<code class="descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.reset" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">reset</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.reset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.reset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset output layer training and clear state</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.score">
-<code class="descname">score</code><span class="sig-paren">(</span><em>U</em>, <em>Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">score</code><span class="sig-paren">(</span><em class="sig-param">U</em>, <em class="sig-param">Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes loss</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -410,7 +410,7 @@ computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.score_with_X">
-<code class="descname">score_with_X</code><span class="sig-paren">(</span><em>X</em>, <em>Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score_with_X" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">score_with_X</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y_true</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.score_with_X"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.score_with_X" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes loss given input data X already processed with reservoir
 activations. Functions identically to running:</p>
 <p>self.score(self._compute_X(U), Y_true)</p>
@@ -438,7 +438,7 @@ computed separately and averaged together at the end.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>clear_state=False</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">batchU</em>, <em class="sig-param">batchY_true</em>, <em class="sig-param">clear_state=False</em>, <em class="sig-param">warmup=10</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">compute_loss_freq=-1</em>, <em class="sig-param">warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trains on U’s and corresponding Y_true’s, batched in first index.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -476,7 +476,7 @@ compute_loss_freq is less than equal to 0.</p>
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.train_validate">
-<code class="descname">train_validate</code><span class="sig-paren">(</span><em>trainU</em>, <em>trainY</em>, <em>valU</em>, <em>valY</em>, <em>warmup=10</em>, <em>verbose=1</em>, <em>compute_loss_freq=-1</em>, <em>warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">train_validate</code><span class="sig-paren">(</span><em class="sig-param">trainU</em>, <em class="sig-param">trainY</em>, <em class="sig-param">valU</em>, <em class="sig-param">valY</em>, <em class="sig-param">warmup=10</em>, <em class="sig-param">verbose=1</em>, <em class="sig-param">compute_loss_freq=-1</em>, <em class="sig-param">warmup_each_batch=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.train_validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.train_validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train on provided training data, and immediately validate
 and return validation loss.</p>
 <dl class="field-list simple">
@@ -511,7 +511,7 @@ are not consecutive time series, setting this to True is usually desirable.</p><
 
 <dl class="method">
 <dt id="parallel_esn.esn.ESN.validate">
-<code class="descname">validate</code><span class="sig-paren">(</span><em>batchU</em>, <em>batchY_true</em>, <em>warmup=10</em>, <em>verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.validate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">validate</code><span class="sig-paren">(</span><em class="sig-param">batchU</em>, <em class="sig-param">batchY_true</em>, <em class="sig-param">warmup=10</em>, <em class="sig-param">verbose=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/esn.html#ESN.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.esn.ESN.validate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get loss on validation set, given past sequences in batchU and observed outcomes batchY_true</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

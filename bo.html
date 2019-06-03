@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Bayesian Optimization &mdash; Parallel Echo State Network 0.post60+ge3f7d7c documentation</title>
+  <title>Bayesian Optimization &mdash; Parallel Echo State Network 0.post63+g7332fce documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.post60+ge3f7d7c
+                0.post63+g7332fce
               </div>
             
           
@@ -173,11 +173,11 @@ update the underlying Gaussian process.</p>
 <h2>Function Documentation<a class="headerlink" href="#function-documentation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="parallel_esn.bo.BO">
-<em class="property">class </em><code class="descclassname">parallel_esn.bo.</code><code class="descname">BO</code><span class="sig-paren">(</span><em>k</em>, <em>hidden_dim=(100</em>, <em>10000)</em>, <em>spectral_radius=(0.9</em>, <em>1.3)</em>, <em>p=(0</em>, <em>1)</em>, <em>alpha=(0</em>, <em>1)</em>, <em>beta=(1e-05</em>, <em>1000.0)</em>, <em>random_state=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">parallel_esn.bo.</code><code class="sig-name descname">BO</code><span class="sig-paren">(</span><em class="sig-param">k</em>, <em class="sig-param">hidden_dim=(100</em>, <em class="sig-param">10000)</em>, <em class="sig-param">spectral_radius=(0.9</em>, <em class="sig-param">1.3)</em>, <em class="sig-param">p=(0</em>, <em class="sig-param">1)</em>, <em class="sig-param">alpha=(0</em>, <em class="sig-param">1)</em>, <em class="sig-param">beta=(1e-05</em>, <em class="sig-param">1000.0)</em>, <em class="sig-param">random_state=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bayesian Optimization framework</p>
 <dl class="method">
 <dt id="parallel_esn.bo.BO.find_best_choices">
-<code class="descname">find_best_choices</code><span class="sig-paren">(</span><em>num_samples=1000</em>, <em>num_choices=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO.find_best_choices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO.find_best_choices" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">find_best_choices</code><span class="sig-paren">(</span><em class="sig-param">num_samples=1000</em>, <em class="sig-param">num_choices=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO.find_best_choices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO.find_best_choices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the best hyper-parameter combination</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -197,7 +197,7 @@ update the underlying Gaussian process.</p>
 
 <dl class="method">
 <dt id="parallel_esn.bo.BO.update_gpr">
-<code class="descname">update_gpr</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO.update_gpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO.update_gpr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update_gpr</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/parallel_esn/bo.html#BO.update_gpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#parallel_esn.bo.BO.update_gpr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates the Gaussian process with new data and error value</p>
 <p>Updates the Gaussian process by adding, <cite>H</cite>, the list of
 hyper-parameter values that were used with true function and y
