@@ -9,7 +9,7 @@ Parallel Echo State Network
         :target: https://pypi.python.org/pypi/parallel_esn
 
 
-This repository contains the code to access the Python package parallel_esn which was developed for the Harvard CS205 final project. The code is under a three clause BSD license. To read the documentation for the package code visit: 
+This repository contains the code to access the Python package parallel_esn which was developed for the Harvard CS205 final project. The code is under a two clause BSD license. To read the documentation for the package code visit: 
 
 * Documentation: https://zblanks.github.io/parallel_esn.
 
