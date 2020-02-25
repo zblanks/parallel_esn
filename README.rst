@@ -22,7 +22,7 @@ We propose to make use of parallel computing architectures to not only make this
 * Training the network faster through distributed computing with multiple nodes and multiple threads (OpenMP and MPI)
 
 .. figure:: https://raw.githubusercontent.com/rednotion/parallel_esn_web/master/Screenshot%202019-04-30%20at%206.34.15%20PM.png
-   :scale: 50 %
+   :scale: 40 %
    :alt: Echo State Network Diagram
    
    Source: Kawai, Y., Tokuno, T., Park, J., & Asada, M. (2017)
@@ -33,9 +33,21 @@ Examples
 --------
 
 **Test Example**
+
 The goal of this example is to show that feeding the ESN the time series of multiple correlated features can help in predictions. The sample data is generated as a sum of three sine waves and gaussian noise. In the baseline model, the ESN only has access to this single time series for training and inference. In the other model, the ESN gets the aforementioned time series and a second time series which is correlated with the first: a noise-free sine wave of the same frequency, but different phase, as one of the component sine waves present in the first time series.
 
 .. image:: parallel_esn/example/imgs/2series_prediction_gain.png
+
+**One-Shot Prediction on PJM Hourly Energy Consumption Data**
+
+We train the echo state network on `PJM Interconnection energy consumption data <https://www.kaggle.com/robikscube/hourly-energy-consumption#EKPC_hourly.csv>`_, a dataset containing the hourly power consumption of part of the Eastern Interconnection grid. During the training and inference stages, a window containing slightly over a week of data is fed to the ESN, and the ESN is expected to output the next 7 days of predicted power consumption in one shot (i.e. it does not predict steps recursively).
+
+.. image:: parallel_esn/example/imgs/PJM0020.png
+   :width: 500
+.. image:: parallel_esn/example/imgs/PJM0021.png
+   :width: 500
+.. image:: parallel_esn/example/imgs/PJM0022.png
+   :width: 500
 
 Code Description
 ----------------
