@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>parallel_esn.bo &mdash; Parallel Echo State Network 0.post63+g7332fce documentation</title>
+  <title>parallel_esn.bo &mdash; Parallel Echo State Network 0.post67+g25a979d documentation</title>
   
 
   
@@ -21,13 +21,14 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-        <script type="text/javascript" src="../../_static/copybutton.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script >var copybuttonSkipText = '>>> ';</script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -62,7 +63,7 @@
             
             
               <div class="version">
-                0.post63+g7332fce
+                0.post67+g25a979d
               </div>
             
           
@@ -153,11 +154,11 @@
            <div itemprop="articleBody">
             
   <h1>Source code for parallel_esn.bo</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log10</span>
-<span class="kn">from</span> <span class="nn">sklearn.gaussian_process</span> <span class="k">import</span> <span class="n">GaussianProcessRegressor</span>
-<span class="kn">from</span> <span class="nn">sklearn.gaussian_process.kernels</span> <span class="k">import</span> <span class="n">Matern</span>
+<span></span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log10</span>
+<span class="kn">from</span> <span class="nn">sklearn.gaussian_process</span> <span class="kn">import</span> <span class="n">GaussianProcessRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.gaussian_process.kernels</span> <span class="kn">import</span> <span class="n">Matern</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">create_rng</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">create_rng</span>
 
 
 <div class="viewcode-block" id="BO"><a class="viewcode-back" href="../../bo.html#parallel_esn.bo.BO">[docs]</a><span class="k">class</span> <span class="nc">BO</span><span class="p">:</span>
@@ -165,7 +166,7 @@
 <span class="sd">    Bayesian Optimization framework</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">),</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">10000</span><span class="p">),</span>
                  <span class="n">spectral_radius</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                  <span class="n">alpha</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">beta</span><span class="o">=</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span> <span class="mf">1e3</span><span class="p">),</span> <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

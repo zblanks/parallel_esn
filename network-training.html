@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post63+g7332fce documentation</title>
+  <title>Echo State Network Training &mdash; Parallel Echo State Network 0.post67+g25a979d documentation</title>
   
 
   
@@ -21,13 +21,14 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-        <script type="text/javascript" src="_static/copybutton.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script src="_static/clipboard.min.js"></script>
+        <script src="_static/copybutton.js"></script>
+        <script >var copybuttonSkipText = '>>> ';</script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -64,7 +65,7 @@
             
             
               <div class="version">
-                0.post63+g7332fce
+                0.post67+g25a979d
               </div>
             
           
@@ -177,7 +178,7 @@ or a normal distribution for the weights. However, we have opted to define
 the reservoir of the ESN as a small-world network. We did this because there
 has been recent research which suggests that by having a more fine-grained
 specification of the reservoir network, one can see improvements in
-out-of-sample performance for the model <a class="reference internal" href="#kawai2017echo" id="id1">[KTPA17]</a>.</p>
+out-of-sample performance for the model <a class="bibtex reference internal" href="#kawai2017echo" id="id1">[KTPA17]</a>.</p>
 <p>Thus instead of specifying the sparsity of the reservoir, a user can now have
 greater control over the network by providing the number of neighbors and the
 re-wiring probability for the graph.</p>
@@ -191,20 +192,20 @@ re-wiring probability for the graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Size of input dimension, N_u</p></li>
-<li><p><strong>hidden_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of hidden units in the W matrix, N_x</p></li>
-<li><p><strong>output_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimensionality of the output, N_y</p></li>
-<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – k-nearest neighbors each node is connected to in the small-world
+<li><p><strong>input_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Size of input dimension, N_u</p></li>
+<li><p><strong>hidden_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Number of hidden units in the W matrix, N_x</p></li>
+<li><p><strong>output_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Dimensionality of the output, N_y</p></li>
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – k-nearest neighbors each node is connected to in the small-world
 network for the hidden layer</p></li>
-<li><p><strong>spectral_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – Spectral radius of the reservoir</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – Re-wiring probability for small-world network</p></li>
-<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – Regularization parameter for L2 regression</p></li>
-<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – ESN leaking rate</p></li>
-<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em> or </em><em>np.random.RandomState</em><em>, </em><em>optional</em>) – Random state initializer</p></li>
+<li><p><strong>spectral_radius</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – Spectral radius of the reservoir</p></li>
+<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – Re-wiring probability for small-world network</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – Regularization parameter for L2 regression</p></li>
+<li><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – ESN leaking rate</p></li>
+<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em> or </em><em>np.random.RandomState</em><em>, </em><em>optional</em>) – Random state initializer</p></li>
 <li><p><strong>weight_distn</strong> (<em>{&quot;uniform&quot;</em><em>, </em><em>&quot;normal&quot;}</em><em>, </em><em>optional</em>) – Distribution of reservoir weights</p></li>
-<li><p><strong>use_cython</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use the Cython compiled code when computing the X matrix. Not
+<li><p><strong>use_cython</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use the Cython compiled code when computing the X matrix. Not
 compatible with use_sparse.</p></li>
-<li><p><strong>use_sparse</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use a sparse matrix for the reservoir W</p></li>
+<li><p><strong>use_sparse</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use a sparse matrix for the reservoir W</p></li>
 </ul>
 </dd>
 </dl>
@@ -272,7 +273,7 @@ number of iterations.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>U</strong> (<em>np.ndarray</em>) – Input data array, columns u(n) concatenated horizontally.
 Dimensions - N_u x T</p></li>
-<li><p><strong>iterations</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – How many future times to predict.</p></li>
+<li><p><strong>iterations</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – How many future times to predict.</p></li>
 <li><p><strong>cold_start</strong> (<em>boolean</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to clear reservoir state before driving the reservoir with input data U.
 If the input data follows directly after training data, a warm start is sensible.
 However, if the provided data is temporally disconnected from the training data,
@@ -302,8 +303,8 @@ obtain feature vectors as rows stacked vertically in time.</p>
 Dimensions - N_u x T</p></li>
 <li><p><strong>Y_true</strong> (<em>np.ndarray</em>) – Target output array,  y(n) concatenated horizontally in time.
 Dimensions - N_y x T</p></li>
-<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
-<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The number of predictions desired.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -311,7 +312,7 @@ Dimensions - N_y x T</p></li>
 NMSE is computed separately and averaged together at the end.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -332,15 +333,15 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
-<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
-<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The number of predictions desired.</p></li>
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
 before initial transients in the reservoir have died out. The amount to discard
 depends on the memory of the network and typically ranges from 10s to 100s.</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
-<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
-<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
 are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
@@ -348,7 +349,7 @@ are not consecutive time series, setting this to True is usually desirable.</p><
 <dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence in validation set.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -365,16 +366,16 @@ to compute the total error.</p>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – Batch of true output data arrays
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
-<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The number of predictions desired.</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>input_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The input length to be fed to the ESN before recursive single-step prediction.</p></li>
+<li><p><strong>pred_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The number of predictions desired.</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>loss</strong> – Returns the average of the NMSE losses computed on each sequence</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -403,7 +404,7 @@ Dimensions - N_y x T</p></li>
 computed separately and averaged together at the end.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -431,7 +432,7 @@ Dimensions - N_y x T</p></li>
 computed separately and averaged together at the end.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -450,16 +451,16 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 <li><p><strong>clear_state</strong> (<em>boolean</em><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to clear the reservoir memory in between batches. If False, the training
 on the batches is equivalent to if the batches were all concatenated into a single
 time series.</p></li>
-<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of training, before initial
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of training, before initial
 transients in the reservoir have died out. The amount to discard depends on
 the memory of the network and typically ranges from 10s to 100s. If batches are
 to be treated as independent, with clear_state=True, warmups can typically be shorter
 since the zeroed reservoir initialization would be the normal operating mode of
 the ESN.</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
-<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
-<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
 are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
@@ -490,13 +491,13 @@ Dimensions - Batch_size x N_y x T_i</p></li>
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>valY</strong> (<em>array_like of np.ndarray</em>) – Batch of validation true output data arrays.
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each train/validation batch,
 before initial transients in the reservoir have died out. The amount to discard
 depends on the memory of the network and typically ranges from 10s to 100s.</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
-<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>compute_loss_freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=-1</em>) – How often to compute training loss. Only for information, not necessary
 for training. Negative value disables computing training loss.</p></li>
-<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
+<li><p><strong>warmup_each_batch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default=False</em>) – Whether to use a warmup period on each batch before training. If the batches are
 are not consecutive time series, setting this to True is usually desirable.</p></li>
 </ul>
 </dd>
@@ -504,7 +505,7 @@ are not consecutive time series, setting this to True is usually desirable.</p><
 <dd class="field-even"><p><strong>loss</strong> – Returns the sum of the losses computed on each sequence in validation set.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -520,17 +521,17 @@ are not consecutive time series, setting this to True is usually desirable.</p><
 Dimensions - Batch_size x N_x x T_i</p></li>
 <li><p><strong>batchY_true</strong> (<em>array_like of np.ndarray</em>) – Batch of true output data arrays
 Dimensions - Batch_size x N_y x T_i</p></li>
-<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each validation batch, before initial
+<li><p><strong>warmup</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=10</em>) – The number of states to discard at the beginning of each validation batch, before initial
 transients in the reservoir have died out. The amount to discard depends on
 the memory of the network and typically ranges from 10s to 100s.</p></li>
-<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em>, </em><em>optional</em><em>, </em><em>default=1</em>) – Whether to print status of training</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>loss</strong> – Returns the average of the NMSE losses computed on each sequence</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -538,7 +539,7 @@ the memory of the network and typically ranges from 10s to 100s.</p></li>
 </dd></dl>
 
 <p id="bibtex-bibliography-network-training-0"><dl class="citation">
-<dt class="label" id="kawai2017echo"><span class="brackets"><a class="fn-backref" href="#id1">KTPA17</a></span></dt>
+<dt class="bibtex label" id="kawai2017echo"><span class="brackets"><a class="fn-backref" href="#id1">KTPA17</a></span></dt>
 <dd><p>Yuji Kawai, Tatsuya Tokuno, Jihoon Park, and Minoru Asada. Echo in a small-world reservoir: time-series prediction using an economical recurrent neural network. In <em>2017 Joint IEEE International Conference on Development and Learning and Epigenetic Robotics (ICDL-EpiRob)</em>, 126–131. IEEE, 2017.</p>
 </dd>
 </dl>
