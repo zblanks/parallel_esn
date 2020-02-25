@@ -5,13 +5,37 @@ Parallel Echo State Network
 .. image:: https://img.shields.io/travis/zblanks/parallel_esn.svg
         :target: https://travis-ci.org/zblanks/parallel_esn
 
-.. image:: https://img.shields.io/pypi/v/parallel_esn.svg
-        :target: https://pypi.python.org/pypi/parallel_esn
-
 
 This repository contains the code to access the Python package parallel_esn which was developed for the Harvard CS205 final project. The code is under a two clause BSD license. To read the documentation for the package code visit: 
 
 * Documentation: https://zblanks.github.io/parallel_esn.
+
+Background
+----------
+
+Echo State Networks (ESN) are recurrent neural networks making use of a single layer of sparsely connected nodes (‘reservoir’). They are often used for time series tasks, and can be less computationally intensive other than deep learning methods. However, ESNs require fine tuning of many parameters, including the input weights, the reservoir (e.g. how many nodes in the reservoir, what is the spectral radius, etc). This has usually been done through either (a) sequential testing and optimization; or (b) instantiating many random instances, and then picking the best performing set of parameters. Depending on the length of the input data and the size of the reservoir, ESNs can thus be computationally intensive to train. In addition, we have to repeat this training many times before arriving at a good set of parameters.
+
+We propose to make use of parallel computing architectures to not only make this process faster, but also smarter. We do this through:
+
+* Setting the reservoir to be a small world network
+* Using bayesian optimization to iteratively find the best set of parameters
+* Training the network faster through distributed computing with multiple nodes and multiple threads (OpenMP and MPI)
+
+.. figure:: https://raw.githubusercontent.com/rednotion/parallel_esn_web/master/Screenshot%202019-04-30%20at%206.34.15%20PM.png
+   :scale: 50 %
+   :alt: Echo State Network Diagram
+   
+   Source: Kawai, Y., Tokuno, T., Park, J., & Asada, M. (2017)
+
+`Additional background on our supporting information page <https://rednotion.github.io/parallel_esn_web/>`_
+   
+Examples
+--------
+
+**Test Example**
+The goal of this example is to show that feeding the ESN the time series of multiple correlated features can help in predictions. The sample data is generated as a sum of three sine waves and gaussian noise. In the baseline model, the ESN only has access to this single time series for training and inference. In the other model, the ESN gets the aforementioned time series and a second time series which is correlated with the first: a noise-free sine wave of the same frequency, but different phase, as one of the component sine waves present in the first time series.
+
+.. image:: parallel_esn/example/imgs/2series_prediction_gain.png
 
 Code Description
 ----------------
