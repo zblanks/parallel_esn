@@ -22,7 +22,7 @@ We propose to make use of parallel computing architectures to not only make this
 * Training the network faster through distributed computing with multiple nodes and multiple threads (OpenMP and MPI)
 
 .. figure:: https://raw.githubusercontent.com/rednotion/parallel_esn_web/master/Screenshot%202019-04-30%20at%206.34.15%20PM.png
-   :scale: 40 %
+   :width: 400
    :alt: Echo State Network Diagram
    
    Source: Kawai, Y., Tokuno, T., Park, J., & Asada, M. (2017)
